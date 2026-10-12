@@ -28,7 +28,7 @@
       <details class="maintenance"><summary>批量管理当前窗口</summary><p>只操作当前窗口的浏览器分组，保留已保存的固定组记录。</p><button id="dissolve" class="secondary">解散全部分组</button><button id="close-groups" class="danger">关闭分组标签</button></details>
     </section>
     <section id="collections-view" data-view="collections" hidden>
-      <div class="page-heading"><div><p class="eyebrow">SAVED COLLECTIONS</p><h1>固定分组</h1><p>保存常用页面，之后可以一键重新打开。</p></div><button id="new-collection" class="primary">新建固定组</button></div>
+      <div class="page-heading"><div><h1>固定分组</h1><p>保存常用页面，之后可以一键重新打开。</p></div><button id="new-collection" class="primary">新建固定组</button></div>
       <div class="search-row"><label class="sr-only" for="search">搜索固定组</label><input id="search" type="search" placeholder="搜索组名或页面…"><span id="collection-count" class="muted"></span></div>
       <div id="collection-list" class="card-grid"></div>
     </section>
@@ -100,6 +100,23 @@
     <footer>Tabloom · 为专注留一点空间</footer>
   </main>
 </div>
-<dialog id="editor"><form id="collection-form"><div class="dialog-heading"><div><p class="eyebrow">SAVED COLLECTION</p><h2 id="editor-heading">新建固定组</h2></div><button type="button" id="dismiss-editor" class="quiet" aria-label="关闭编辑器">关闭</button></div><input id="collection-id" type="hidden"><label for="collection-name">组名</label><input id="collection-name" required maxlength="60" placeholder="例如：我的开发工作台"><fieldset class="choice-picker collection-color-picker"><legend>分组颜色</legend><div class="choice-options collection-color-options" id="collection-colors"></div><input id="collection-color" type="hidden" value="blue"></fieldset><label for="collection-addresses">页面网址</label><textarea id="collection-addresses" required placeholder="每行一个 HTTP 或 HTTPS 网址"></textarea><small>按填写顺序打开，最多保存 300 个页面。</small><p id="editor-error" class="inline-error" role="alert"></p><div class="dialog-actions"><button type="button" id="cancel-editor" class="secondary">取消</button><button type="submit" class="primary">保存固定组</button></div></form></dialog>
+<dialog id="editor">
+  <form id="collection-form">
+    <div class="dialog-heading"><div><p class="eyebrow">SAVED COLLECTION</p><h2 id="editor-heading">新建固定组</h2></div><button type="button" id="dismiss-editor" class="quiet" aria-label="关闭编辑器">关闭</button></div>
+    <input id="collection-id" type="hidden">
+    <label for="collection-name">组名</label><input id="collection-name" required maxlength="60" placeholder="例如：我的开发工作台">
+    <fieldset class="choice-picker collection-color-picker"><legend>分组颜色</legend><div class="choice-options collection-color-options" id="collection-colors"></div><input id="collection-color" type="hidden" value="blue"></fieldset>
+    <section class="page-editor" aria-labelledby="page-editor-heading">
+      <div class="page-editor-heading">
+        <div><h3 id="page-editor-heading">组内页面</h3><p>编辑页面标题和网址，也可以调整打开顺序。</p></div>
+        <div class="page-editor-tools"><span id="page-count">0 / 300</span><button id="add-page" type="button" class="secondary">添加页面</button></div>
+      </div>
+      <div id="page-editor-list" class="page-editor-list"></div>
+      <p id="page-editor-empty" class="page-editor-empty" hidden>还没有页面，点击“添加页面”开始。</p>
+    </section>
+    <p id="editor-error" class="inline-error" role="alert"></p>
+    <div class="dialog-actions"><button type="button" id="cancel-editor" class="secondary">取消</button><button type="submit" class="primary">保存固定组</button></div>
+  </form>
+</dialog>
 <script type="module" src="src/ui/app.js"></script>
 </body></html>

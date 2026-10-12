@@ -21,12 +21,12 @@ function renderCollection(group) {
   }
   if (group.pages.length > 3) list.append(element('li', '', '还有 ' + (group.pages.length - 3) + ' 个页面'));
   const actions = element('div', 'card-actions');
-  const open = element('button', 'primary', '一键打开');
+  const open = element('button', 'primary collection-action', '一键打开');
   open.addEventListener('click', () => withButton(open, async () => {
     const result = await command('open-saved', { windowId, id: group.id });
     notify(result.message);
   }));
-  const manage = element('a', 'text-link collection-manage-link', '管理');
+  const manage = element('a', 'text-link collection-action collection-manage-link', '管理');
   manage.href = 'app.html#collections';
   manage.setAttribute('aria-label', '管理固定组');
   actions.append(open, manage);

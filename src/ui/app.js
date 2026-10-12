@@ -8,8 +8,8 @@ let windowId;
 let dashboard;
 let refreshTimer;
 let initialSettings = true;
-let editedPages = [];
 let loading = null;
+let pageRowSequence = 0;
 let currentTheme = { mode: 'dark', accent: 'blue' };
 let lastSavedTheme = { ...currentTheme };
 let themeSaveQueue = Promise.resolve();
@@ -124,6 +124,76 @@ function setCollectionColor(value) {
   }
 }
 
+function makePageEditorRow(page = {}) {
+  const row = element('div', 'page-editor-row');
+  const sequence = ++pageRowSequence;
+  const titleInput = element('input');
+  titleInput.id = 'page-title-' + sequence;
+  titleInput.type = 'text';
+  titleInput.maxLength = 200;
+  titleInput.placeholder = '留空时显示网站名称';
+  titleInput.value = page.title || '';
+  titleInput.dataset.pageTitle = '';
+  const titleField = element('label', 'page-editor-field');
+  titleField.htmlFor = titleInput.id;
+  titleField.append(element('span', '', '页面标题（可选）'), titleInput);
+
+  const urlInput = element('input');
+  urlInput.id = 'page-url-' + sequence;
+  urlInput.type = 'url';
+  urlInput.required = true;
+  urlInput.placeholder = 'https://example.com';
+  urlInput.value = page.url || '';
+  urlInput.dataset.pageUrl = '';
+  const urlField = element('label', 'page-editor-field page-editor-url');
+  urlField.htmlFor = urlInput.id;
+  urlField.append(element('span', '', '页面网址'), urlInput);
+
+  const actions = element('div', 'page-editor-actions');
+  const move = (label, delta, ariaLabel) => {
+    const button = element('button', 'quiet page-order-button', label);
+    button.type = 'button';
+    button.setAttribute('aria-label', ariaLabel);
+    button.addEventListener('click', () => {
+      const sibling = delta < 0 ? row.previousElementSibling : row.nextElementSibling;
+      if (!sibling) return;
+      if (delta < 0) row.parentElement.insertBefore(row, sibling);
+      else row.parentElement.insertBefore(sibling, row);
+      updatePageEditorState();
+    });
+    actions.append(button);
+    return button;
+  };
+  move('上移', -1, '上移此页面');
+  move('下移', 1, '下移此页面');
+  const remove = element('button', 'quiet page-remove-button', '删除');
+  remove.type = 'button';
+  remove.setAttribute('aria-label', '删除此页面');
+  remove.addEventListener('click', () => {
+    row.remove();
+    updatePageEditorState();
+  });
+  actions.append(remove);
+  row.append(titleField, urlField, actions);
+  return row;
+}
+
+function updatePageEditorState() {
+  const rows = [...$('page-editor-list').children];
+  $('page-count').textContent = rows.length + ' / 300';
+  $('add-page').disabled = rows.length >= 300;
+  $('page-editor-empty').hidden = rows.length > 0;
+  rows.forEach((row, index) => {
+    row.querySelector('.page-order-button[aria-label="上移此页面"]').disabled = index === 0;
+    row.querySelector('.page-order-button[aria-label="下移此页面"]').disabled = index === rows.length - 1;
+  });
+}
+
+function renderPageEditor(pages) {
+  $('page-editor-list').replaceChildren(...pages.map(makePageEditorRow));
+  updatePageEditorState();
+}
+
 function updateTheme(patch) {
   const next = { ...currentTheme, ...patch };
   if (next.mode === currentTheme.mode && next.accent === currentTheme.accent) return;
@@ -221,10 +291,9 @@ function openEditor(group) {
   $('collection-id').value = group?.id || '';
   $('collection-name').value = group?.name || '';
   setCollectionColor(group?.color || 'blue');
-  $('collection-addresses').value = group?.pages.map(page => page.url).join('\n') || '';
+  renderPageEditor(group?.pages?.length ? group.pages : [{}]);
   $('editor-heading').textContent = group ? '编辑固定组' : '新建固定组';
   $('editor-error').textContent = '';
-  editedPages = group?.pages || [];
   $('editor').showModal();
 }
 
@@ -265,14 +334,25 @@ for (const [color, label] of Object.entries(COLOR_LABELS)) {
 }
 $('collection-form').addEventListener('submit', async event => {
   event.preventDefault();
-  const button = event.submitter;
-  button.disabled = true;
+  const button = event.submitter || $('collection-form').querySelector('button[type="submit"]');
+  if (button) button.disabled = true;
   try {
-    const urls = $('collection-addresses').value.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(pageAddress);
-    const titles = new Map(editedPages.map(page => [page.url, page.title]));
-    await perform('save-collection', { value: { id: $('collection-id').value || undefined, name: $('collection-name').value, color: $('collection-color').value, pages: urls.map(url => ({ url, title: titles.get(url) || '' })) } });
+    const pages = [...$('page-editor-list').querySelectorAll('.page-editor-row')].map(row => ({
+      url: pageAddress(row.querySelector('[data-page-url]').value.trim()),
+      title: row.querySelector('[data-page-title]').value.trim()
+    }));
+    if (!pages.length) throw new Error('固定组至少需要一个页面。');
+    if (pages.length > 300) throw new Error('每个固定组最多保存 300 个页面。');
+    await perform('save-collection', { value: { id: $('collection-id').value || undefined, name: $('collection-name').value, color: $('collection-color').value, pages } });
     $('editor').close();
-  } catch (error) { $('editor-error').textContent = error.message; } finally { button.disabled = false; }
+  } catch (error) { $('editor-error').textContent = error.message; } finally { if (button) button.disabled = false; }
+});
+$('page-editor-list').addEventListener('input', () => { $('editor-error').textContent = ''; });
+$('add-page').addEventListener('click', () => {
+  const row = makePageEditorRow();
+  $('page-editor-list').append(row);
+  updatePageEditorState();
+  row.querySelector('[data-page-title]').focus();
 });
 $('settings-form').addEventListener('submit', event => {
   event.preventDefault();
