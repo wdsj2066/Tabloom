@@ -2233,13 +2233,69 @@ body:has(.shell) .theme-mode-copy small {
   font-size: 11px;
 }
 
-body:has(.shell) select option,
-body:has(.shell) select optgroup {
-  color: var(--ink);
-  background-color: var(--paper);
+body:has(.shell) .choice-picker {
+  margin: 18px 0;
+  padding: 0;
+  border: 0;
 }
 
-body:has(.shell) select option:checked {
-  color: var(--accent-contrast);
-  background-color: var(--accent);
+body:has(.shell) .choice-picker legend {
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+body:has(.shell) .choice-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body:has(.shell) .choice-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  transition: border-color .18s,background .18s,color .18s,transform .15s;
+}
+
+body:has(.shell) .choice-chip:hover {
+  border-color: var(--accent-line);
+  color: var(--ink);
+}
+
+body:has(.shell) .choice-chip.selected {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+body:has(.shell) .collection-color-picker {
+  margin: 14px 0 18px;
+}
+
+body:has(.shell) .collection-color-options {
+  gap: 7px;
+}
+
+body:has(.shell) .collection-color-choice {
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+body:has(.shell) .collection-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--group-color);
+  box-shadow: 0 0 0 2px var(--surface),0 0 0 3px var(--line);
 }

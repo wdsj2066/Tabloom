@@ -106,6 +106,24 @@ function syncThemeControls() {
   }
 }
 
+function setSearchEngine(value) {
+  $('search-engine').value = value;
+  for (const button of document.querySelectorAll('[data-search-engine]')) {
+    const active = button.dataset.searchEngine === value;
+    button.classList.toggle('selected', active);
+    button.setAttribute('aria-pressed', String(active));
+  }
+}
+
+function setCollectionColor(value) {
+  $('collection-color').value = value;
+  for (const button of document.querySelectorAll('[data-collection-color]')) {
+    const active = button.dataset.collectionColor === value;
+    button.classList.toggle('selected', active);
+    button.setAttribute('aria-pressed', String(active));
+  }
+}
+
 function updateTheme(patch) {
   const next = { ...currentTheme, ...patch };
   if (next.mode === currentTheme.mode && next.accent === currentTheme.accent) return;
@@ -176,7 +194,7 @@ async function load() {
     if (initialSettings) {
       populateSettings(dashboard.settings);
       $('newtab-enabled').checked = dashboard.appearance.newTabEnabled;
-      $('search-engine').value = dashboard.appearance.searchEngine;
+      setSearchEngine(dashboard.appearance.searchEngine);
       initialSettings = false;
     }
     if (busy) queueRefresh();
@@ -202,7 +220,7 @@ function openEditor(group) {
   $('collection-form').reset();
   $('collection-id').value = group?.id || '';
   $('collection-name').value = group?.name || '';
-  $('collection-color').value = group?.color || 'blue';
+  setCollectionColor(group?.color || 'blue');
   $('collection-addresses').value = group?.pages.map(page => page.url).join('\n') || '';
   $('editor-heading').textContent = group ? '编辑固定组' : '新建固定组';
   $('editor-error').textContent = '';
@@ -234,7 +252,17 @@ if ('IntersectionObserver' in window) {
   for (const section of document.querySelectorAll('[data-setting-section]')) settingsObserver.observe(section);
 }
 for (const id of ['dismiss-editor', 'cancel-editor']) $(id).addEventListener('click', () => $('editor').close());
-for (const [color, label] of Object.entries(COLOR_LABELS)) $('collection-color').add(new Option(label, color));
+for (const [color, label] of Object.entries(COLOR_LABELS)) {
+  const button = element('button', 'choice-chip collection-color-choice', label);
+  const dot = element('span', 'collection-color-dot');
+  button.type = 'button';
+  button.dataset.collectionColor = color;
+  button.setAttribute('aria-pressed', 'false');
+  dot.style.setProperty('--group-color', colorValues[color] || colorValues.blue);
+  button.prepend(dot);
+  button.addEventListener('click', () => setCollectionColor(color));
+  $('collection-colors').append(button);
+}
 $('collection-form').addEventListener('submit', async event => {
   event.preventDefault();
   const button = event.submitter;
@@ -270,6 +298,9 @@ for (const button of document.querySelectorAll('[data-theme-mode]')) {
 }
 for (const button of document.querySelectorAll('[data-theme-accent]')) {
   button.addEventListener('click', () => updateTheme({ accent: button.dataset.themeAccent }));
+}
+for (const button of document.querySelectorAll('[data-search-engine]')) {
+  button.addEventListener('click', () => setSearchEngine(button.dataset.searchEngine));
 }
 $('reveal').addEventListener('click', () => {
   const reveal = $('secret').type === 'password';
