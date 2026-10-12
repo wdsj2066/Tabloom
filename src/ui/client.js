@@ -1,3 +1,5 @@
+import { KEYS } from '../core/config.js';
+
 export async function currentWindowId() { return (await chrome.windows.getCurrent()).id; }
 export async function command(action, data = {}) {
   const response = await chrome.runtime.sendMessage({ channel: 'tabloom', action, ...data });
@@ -9,6 +11,10 @@ export function element(tag, className, text) {
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
+}
+export async function loadTheme(fallback) {
+  const stored = (await chrome.storage.local.get(KEYS.theme))[KEYS.theme];
+  return stored ?? fallback;
 }
 export function applyTheme(theme = 'dark') {
   const mode = typeof theme === 'string' ? theme : theme?.mode;

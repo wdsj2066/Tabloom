@@ -1,6 +1,6 @@
-import { COLOR_LABELS } from '../core/config.js';
+import { COLOR_LABELS, KEYS } from '../core/config.js';
 import { pageAddress } from '../core/validation.js';
-import { applyTheme, command, currentWindowId, element, notify, withButton } from './client.js';
+import { applyTheme, command, currentWindowId, element, loadTheme, notify, withButton } from './client.js';
 
 const $ = id => document.getElementById(id);
 const colorValues = { blue: '#5c83d8', cyan: '#4bb5bb', green: '#62b38a', purple: '#9380ca', pink: '#d78eac', yellow: '#c7ad43', orange: '#cf9557', red: '#cf727c', grey: '#9093a4' };
@@ -113,7 +113,8 @@ function updateTheme(patch) {
   themeSavePending += 1;
   $('theme-save-status').textContent = '主题已即时应用，正在保存…';
   const save = themeSaveQueue.catch(() => {}).then(async () => {
-    lastSavedTheme = normalizeTheme(await command('save-theme', { value: next }));
+    await chrome.storage.local.set({ [KEYS.theme]: next });
+    lastSavedTheme = normalizeTheme(next);
     if (revision === themeRevision) {
       $('theme-save-status').textContent = '主题已保存，可以继续调整。';
       notify('主题已应用并保存。');
@@ -148,8 +149,9 @@ async function load() {
   if (loading) return loading;
   loading = (async () => {
     dashboard = await command('dashboard', { windowId });
+    const savedTheme = await loadTheme(dashboard.theme);
     if (!themeSavePending) {
-      currentTheme = normalizeTheme(dashboard.theme);
+      currentTheme = normalizeTheme(savedTheme);
       lastSavedTheme = { ...currentTheme };
       applyTheme(currentTheme);
       syncThemeControls();
