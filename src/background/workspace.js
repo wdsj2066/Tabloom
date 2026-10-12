@@ -70,7 +70,11 @@ export class Workspace {
           name: group.title,
           pages: [...current.values()].filter(tab => tab.groupId === group.id && isPage(tab.url)).slice(0, 2).map(tab => ({ title: tab.title || '', url: tab.url }))
         }));
-        const plan = await this.classifier(settings, batch, context, signal);
+        const tracking = {
+          onRequest: () => Promise.resolve(this.repository.recordModelRequest?.()).catch(() => {}),
+          onUsage: usage => Promise.resolve(this.repository.recordModelUsage?.(usage)).catch(() => {})
+        };
+        const plan = await this.classifier(settings, batch, context, signal, tracking);
         signal.throwIfAborted();
         if (automatic && !(await this.repository.settings()).automatic) return { message: '自动整理已关闭，已停止后续操作。', pages, groups: touched.size };
         for (const entry of plan) {

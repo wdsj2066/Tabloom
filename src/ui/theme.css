@@ -444,9 +444,14 @@ input[type=checkbox] {
 }
 
 .page-preview li::before {
-  content: '↗';
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
   color: #aaa6bf;
   margin-right: 8px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .card-actions {
@@ -805,6 +810,769 @@ dialog::backdrop {
 .popup-body .feedback {
   font-size: 12px;
   margin-bottom: 0;
+}
+
+/* Editorial workspace: restrained ink, translucent surfaces, and quiet typography. */
+body:has(.shell),
+body.popup-body,
+body.start-body {
+  color-scheme: dark;
+  --ink: #f2f1ee;
+  --muted: rgba(255,255,255,.62);
+  --indigo: #f2f1ee;
+  --mint: #8fbf9f;
+  --line: rgba(255,255,255,.15);
+  --paper: #101012;
+  --danger: #d07070;
+  --surface: rgba(255,255,255,.055);
+  --surface-alt: rgba(255,255,255,.09);
+  --float: rgba(255,255,255,.12);
+  --divider: rgba(255,255,255,.12);
+  --field: rgba(255,255,255,.04);
+  --sidebar-surface: rgba(255,255,255,.025);
+  --primary-contrast: #101012;
+  --focus: rgba(242,241,238,.72);
+  --focus-border: rgba(255,255,255,.3);
+  --placeholder: rgba(255,255,255,.38);
+  --scrollbar: rgba(255,255,255,.24);
+  --backdrop: rgba(0,0,0,.6);
+  --primary-hover: rgba(242,241,238,.86);
+  --danger-soft: rgba(208,112,112,.12);
+  --brand-icon-filter: grayscale(.82) brightness(.82);
+  --shadow: 0 18px 50px rgba(0,0,0,.24);
+  --blur-glass: 16px;
+  --radius-control: 12px;
+  --radius-panel: 24px;
+  --font-serif: 'Source Han Serif SC','Noto Serif CJK SC','Songti SC','SimSun',serif;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: 'Segoe UI','Microsoft YaHei',sans-serif;
+}
+
+body:has(.shell) .shell {
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--paper);
+}
+
+body:has(.shell) .sidebar {
+  background: var(--sidebar-surface);
+  border-color: var(--divider);
+  backdrop-filter: blur(var(--blur-glass));
+}
+
+body:has(.shell) .brand {
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+body:has(.shell) .brand img,
+body.popup-body .brand img,
+body.start-body .brand img {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  clip-path: inset(2px round 10px);
+  filter: var(--brand-icon-filter);
+  opacity: .92;
+}
+
+body.popup-body .brand img {
+  width: 34px;
+  height: 34px;
+}
+
+body:has(.shell) .brand small {
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+body:has(.shell) .sidebar-caption {
+  margin-top: 48px;
+  color: var(--muted);
+  letter-spacing: 1.8px;
+}
+
+body:has(.shell) nav {
+  gap: 4px;
+}
+
+body:has(.shell) nav a {
+  min-height: 44px;
+  padding: 11px 14px;
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  transition: color .15s, background .15s;
+}
+
+body:has(.shell) nav a:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+
+body:has(.shell) nav a.active {
+  color: var(--ink);
+  background: var(--surface-alt);
+  backdrop-filter: blur(var(--blur-glass));
+  font-weight: 600;
+}
+
+body:has(.shell) .sidebar-note {
+  padding: 20px 12px 0;
+  border-top: 1px solid var(--divider);
+  color: var(--ink);
+}
+
+body:has(.shell) .sidebar-note p {
+  color: var(--muted);
+}
+
+body:has(.shell) main {
+  height: 100vh;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 56px;
+  scrollbar-color: var(--scrollbar) transparent;
+}
+
+body:has(.shell) .topbar {
+  border-color: var(--divider);
+  color: var(--muted);
+}
+
+body:has(.shell) .feedback {
+  color: var(--ink);
+}
+
+body:has(.shell) .feedback.error,
+body:has(.shell) .inline-error {
+  color: var(--danger);
+}
+
+body:has(.shell) .page-heading {
+  padding: 40px 0 28px;
+}
+
+body:has(.shell) .eyebrow {
+  margin-bottom: 10px;
+  color: var(--muted);
+  letter-spacing: 1.8px;
+}
+
+body:has(.shell) h1 {
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -.6px;
+}
+
+body:has(.shell) h2,
+body:has(.shell) h3 {
+  color: var(--ink);
+}
+
+body:has(.shell) .page-heading p:not(.eyebrow),
+body:has(.shell) .section-heading p {
+  color: var(--muted);
+}
+
+body:has(.shell) .metrics {
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+body:has(.shell) .metrics article,
+body:has(.shell) .usage-card,
+body:has(.shell) .analysis-card,
+body:has(.shell) .collection-card,
+body:has(.shell) .settings-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur-glass));
+  box-shadow: none;
+}
+
+body:has(.shell) .metrics article {
+  min-height: 100px;
+  padding: 20px 22px;
+}
+
+body:has(.shell) .metrics span,
+body:has(.shell) .usage-card > div > span {
+  color: var(--muted);
+}
+
+body:has(.shell) .metrics strong {
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+body:has(.shell) .usage-section {
+  margin: 0 0 32px;
+}
+
+body:has(.shell) .usage-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+body:has(.shell) .usage-heading .eyebrow {
+  margin-bottom: 6px;
+}
+
+body:has(.shell) .usage-heading h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+body:has(.shell) .usage-heading > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+body:has(.shell) .usage-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+}
+
+body:has(.shell) .usage-card {
+  min-height: 124px;
+  padding: 20px 22px;
+}
+
+body:has(.shell) .usage-card strong {
+  display: block;
+  margin: 9px 0 7px;
+  color: var(--ink);
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+body:has(.shell) .usage-card small,
+body:has(.shell) .usage-note {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+body:has(.shell) .usage-note {
+  margin: 10px 2px 0;
+}
+
+body:has(.shell) .analysis-card {
+  justify-content: space-between;
+  padding: 25px 28px;
+  background: var(--surface-alt);
+}
+
+body:has(.shell) .analysis-card .eyebrow {
+  margin-bottom: 8px;
+}
+
+body:has(.shell) .analysis-card h2 {
+  margin-bottom: 8px;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+body:has(.shell) .analysis-card p {
+  margin: 8px 0;
+  color: var(--muted);
+}
+
+body:has(.shell) .model-summary {
+  color: var(--muted);
+}
+
+body:has(.shell) button {
+  border-radius: var(--radius-control);
+  font-weight: 550;
+  box-shadow: none;
+}
+
+body:has(.shell) button.primary {
+  color: var(--primary-contrast);
+  background: var(--ink);
+}
+
+body:has(.shell) button.primary:hover {
+  color: var(--primary-contrast);
+  background: var(--primary-hover);
+}
+
+body:has(.shell) button.secondary {
+  color: var(--ink);
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+}
+
+body:has(.shell) button.quiet {
+  color: var(--muted);
+}
+
+body:has(.shell) button.quiet:hover {
+  color: var(--ink);
+  background: var(--surface-alt);
+}
+
+body:has(.shell) button.danger {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+body:has(.shell) button:focus-visible,
+body:has(.shell) a:focus-visible,
+body:has(.shell) input:focus-visible,
+body:has(.shell) textarea:focus-visible,
+body:has(.shell) select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+body:has(.shell) .toggle {
+  color: var(--muted);
+}
+
+body:has(.shell) input[type=checkbox] {
+  accent-color: var(--ink);
+}
+
+body:has(.shell) .section-heading {
+  margin: 32px 0 16px;
+}
+
+body:has(.shell) .section-heading h2 {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+body:has(.shell) .text-link {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 4px;
+}
+
+body:has(.shell) .card-grid {
+  gap: 12px;
+}
+
+body:has(.shell) .collection-card {
+  padding: 20px;
+}
+
+body:has(.shell) .card-heading {
+  margin-bottom: 12px;
+}
+
+body:has(.shell) .card-heading h3 {
+  font-weight: 550;
+}
+
+body:has(.shell) .muted,
+body:has(.shell) .card-heading small {
+  color: var(--muted);
+}
+
+body:has(.shell) .page-preview {
+  gap: 10px;
+}
+
+body:has(.shell) .page-preview li {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  color: var(--muted);
+}
+
+body:has(.shell) .page-preview li::before {
+  content: '';
+  flex: 0 0 4px;
+  width: 4px;
+  height: 4px;
+  margin-right: 9px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+body:has(.shell) .card-actions {
+  border-color: var(--divider);
+}
+
+body:has(.shell) .empty {
+  border-color: var(--line);
+  border-radius: var(--radius-panel);
+  color: var(--muted);
+}
+
+body:has(.shell) .empty strong {
+  color: var(--ink);
+}
+
+body:has(.shell) .maintenance {
+  border-color: var(--divider);
+  color: var(--muted);
+}
+
+body:has(.shell) .search-row input,
+body:has(.shell) input:not([type=checkbox]):not([type=hidden]),
+body:has(.shell) select,
+body:has(.shell) textarea {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--field);
+  color: var(--ink);
+}
+
+body:has(.shell) input::placeholder,
+body:has(.shell) textarea::placeholder {
+  color: var(--placeholder);
+}
+
+body:has(.shell) .settings-panel {
+  padding: 30px;
+}
+
+body:has(.shell) .form-heading p,
+body:has(.shell) small {
+  color: var(--muted);
+}
+
+body:has(.shell) .step {
+  border-radius: var(--radius-control);
+  background: var(--surface-alt);
+  color: var(--ink);
+}
+
+body:has(.shell) .form-heading.second {
+  border-color: var(--divider);
+}
+
+body:has(.shell) .secret-field {
+  border-color: var(--line);
+  border-radius: var(--radius-control);
+}
+
+body:has(.shell) .secret-field input:not([type=checkbox]) {
+  background: transparent;
+}
+
+body:has(.shell) .optional {
+  color: var(--muted);
+}
+
+body:has(.shell) .privacy-note {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur-glass));
+  color: var(--ink);
+}
+
+body:has(.shell) .privacy-note p {
+  color: var(--muted);
+}
+
+body:has(.shell) footer {
+  color: var(--muted);
+}
+
+body:has(.shell) dialog {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--float);
+  color: var(--ink);
+  backdrop-filter: blur(var(--blur-glass));
+  box-shadow: var(--shadow);
+}
+
+body:has(.shell) dialog::backdrop {
+  background: var(--backdrop);
+  backdrop-filter: blur(var(--blur-glass));
+}
+
+body:has(.shell) .inline-error {
+  color: var(--danger);
+}
+
+@media(max-width:1000px) {
+  body:has(.shell) main {
+    padding: 0 28px;
+  }
+}
+
+@media(max-width:720px) {
+  body:has(.shell) .shell {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+  body:has(.shell) .sidebar {
+    position: static;
+    height: auto;
+    padding: 16px 20px;
+    border-right: 0;
+    border-bottom: 1px solid var(--divider);
+  }
+  body:has(.shell) .sidebar-caption,
+  body:has(.shell) .sidebar-note {
+    display: none;
+  }
+  body:has(.shell) .sidebar nav {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  body:has(.shell) .sidebar nav a {
+    min-height: 38px;
+    padding: 8px 11px;
+  }
+  body:has(.shell) .brand img {
+    width: 32px;
+    height: 32px;
+  }
+  body:has(.shell) main {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    padding: 0 20px;
+  }
+  body:has(.shell) .topbar {
+    height: 50px;
+  }
+  body:has(.shell) .page-heading {
+    padding: 30px 0 22px;
+  }
+  body:has(.shell) h1 {
+    font-size: 30px;
+  }
+  body:has(.shell) .metrics {
+    gap: 8px;
+  }
+  body:has(.shell) .metrics article {
+    min-height: 86px;
+    padding: 14px 12px;
+  }
+  body:has(.shell) .metrics strong {
+    margin-top: 7px;
+    font-size: 24px;
+  }
+  body:has(.shell) .usage-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  body:has(.shell) .usage-card {
+    min-height: 112px;
+  }
+  body:has(.shell) .analysis-card {
+    padding: 22px;
+  }
+  body:has(.shell) .analysis-actions {
+    align-items: flex-start;
+  }
+  body:has(.shell) .settings-panel {
+    padding: 22px;
+  }
+  body:has(.shell) .card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+body.popup-body,
+body.start-body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body.popup-body button.primary,
+body.start-body button.primary {
+  color: var(--primary-contrast);
+  background: var(--ink);
+  box-shadow: none;
+}
+
+body.popup-body button.primary:hover,
+body.start-body button.primary:hover {
+  color: var(--primary-contrast);
+  background: var(--primary-hover);
+}
+
+body.popup-body button.secondary,
+body.start-body button.secondary {
+  color: var(--ink);
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+}
+
+body.popup-body button.quiet,
+body.start-body button.quiet {
+  color: var(--muted);
+}
+
+body.popup-body button:focus-visible,
+body.start-body button:focus-visible,
+body.popup-body a:focus-visible,
+body.start-body a:focus-visible,
+body.popup-body input:focus-visible,
+body.start-body input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+body.popup-body .text-link,
+body.start-body .text-link {
+  color: var(--ink);
+}
+
+body.popup-body {
+  background: var(--paper);
+}
+
+body.popup-body .summary {
+  color: var(--muted);
+}
+
+body.popup-body .summary strong {
+  color: var(--ink);
+}
+
+body.popup-body .toggle {
+  color: var(--muted);
+}
+
+body.popup-body input[type=checkbox] {
+  accent-color: var(--ink);
+}
+
+body.popup-body .popup-library {
+  border-color: var(--divider);
+}
+
+body.popup-body .popup-library h2,
+body.popup-body .quick-item span,
+body.popup-body .popup-bottom {
+  color: var(--muted);
+}
+
+body.popup-body .feedback {
+  color: var(--ink);
+}
+
+body.start-body {
+  min-height: 100vh;
+  background-image: none;
+}
+
+body.start-body .start-header {
+  border-bottom: 1px solid var(--divider);
+}
+
+body.start-body .start-header nav a {
+  border-radius: var(--radius-control);
+  color: var(--muted);
+}
+
+body.start-body .start-header nav a:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+
+body.start-body .search-hero h1 {
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -.6px;
+}
+
+body.start-body .web-search {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur-glass));
+  box-shadow: none;
+}
+
+body.start-body .web-search:focus-within {
+  border-color: var(--focus-border);
+}
+
+body.start-body .web-search input:not([type=checkbox]) {
+  color: var(--ink);
+}
+
+body.start-body .web-search input::placeholder,
+body.start-body .search-caption,
+body.start-body .start-main footer {
+  color: var(--muted);
+}
+
+body.start-body .section-heading h2 {
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-weight: 500;
+}
+
+body.start-body .section-heading p,
+body.start-body .muted,
+body.start-body .card-heading small,
+body.start-body .page-preview li {
+  color: var(--muted);
+}
+
+body.start-body .collection-card,
+body.start-body .empty {
+  border-color: var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur-glass));
+}
+
+body.start-body .empty {
+  color: var(--muted);
+}
+
+body.start-body .empty strong,
+body.start-body .card-heading h3 {
+  color: var(--ink);
+}
+
+body.start-body .page-preview li::before {
+  color: var(--muted);
+}
+
+body.start-body .card-actions {
+  border-color: var(--divider);
+}
+
+body.start-body .start-error {
+  color: var(--danger);
+}
+
+@media(max-width:720px) {
+  body.start-body .brand img {
+    width: 34px;
+    height: 34px;
+  }
+  body.start-body .search-hero h1 {
+    font-size: 28px;
+  }
 }
 
 @media(max-width:1000px) {

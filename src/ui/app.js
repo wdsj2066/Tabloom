@@ -35,7 +35,7 @@ function makeCard(group, saved) {
   const heading = element('div', 'card-heading');
   const title = element('div');
   title.append(element('h3', '', group.name), element('small', '', group.pages.length + ' 个页面'));
-  heading.append(element('span', 'folder-mark', '▤'), title);
+  heading.append(title);
   const preview = element('ul', 'page-preview');
   for (const page of group.pages.slice(0, 3)) {
     const item = element('li', '', page.title || new URL(page.url).hostname + new URL(page.url).pathname);
@@ -50,13 +50,13 @@ function makeCard(group, saved) {
     actions.append(button);
   };
   if (saved) {
-    action('↗ 一键打开', 'primary', () => perform('open-saved', { id: group.id }));
+    action('一键打开', 'primary', () => perform('open-saved', { id: group.id }));
     action('编辑', 'quiet', () => openEditor(group));
     action('删除', 'quiet', async () => {
       if (confirm('删除固定组“' + group.name + '”的保存记录？已打开的标签页会保留。')) await perform('delete-collection', { id: group.id });
     });
   } else {
-    action('＋ 固定这组', 'secondary', () => perform('save-native', { groupId: group.id }));
+    action('固定这组', 'secondary', () => perform('save-native', { groupId: group.id }));
   }
   card.append(heading, preview, actions);
   return card;
@@ -81,6 +81,19 @@ function populateSettings(settings) {
   $('settle-seconds').value = settings.settleSeconds;
 }
 
+function renderUsage(usage = {}) {
+  const number = new Intl.NumberFormat('zh-CN');
+  const requests = usage.requests || 0;
+  $('request-count').textContent = number.format(requests);
+  $('token-total').textContent = usage.totalResponses ? number.format(usage.totalTokens) : requests ? '—' : '0';
+
+  const details = [];
+  if (usage.promptResponses) details.push('输入 ' + number.format(usage.promptTokens));
+  if (usage.completionResponses) details.push('输出 ' + number.format(usage.completionTokens));
+  if (usage.totalResponses) details.push('已返回用量 ' + number.format(usage.totalResponses) + ' 次');
+  $('token-breakdown').textContent = details.join(' · ') || (requests ? '接口未返回 Token 用量' : '等待模型返回用量');
+}
+
 async function load() {
   if (loading) return loading;
   loading = (async () => {
@@ -88,12 +101,13 @@ async function load() {
     $('tab-count').textContent = dashboard.tabCount;
     $('pending-count').textContent = dashboard.pendingCount;
     $('library-count').textContent = dashboard.library.length;
+    renderUsage(dashboard.usage);
     $('automatic').checked = dashboard.settings.automatic;
-    $('model-summary').textContent = dashboard.settings.model ? '当前模型 · ' + dashboard.settings.model : '尚未连接模型 · 前往模型设置';
+    $('model-summary').textContent = dashboard.settings.model ? '使用模型 · ' + dashboard.settings.model : '尚未连接模型 · 前往设置';
     const busy = ['analysis', 'opening', 'saving', 'organizing'].includes(dashboard.state.phase);
     $('analyze').disabled = busy;
     $('cancel').hidden = dashboard.state.phase !== 'analysis';
-    $('analysis-state').textContent = dashboard.state.message || '按共同用途归类，手动整理也会合并 AI 创建的组；保留手动组与固定标签。';
+    $('analysis-state').textContent = dashboard.state.message || '相似用途归在一组，保留手动分组和固定页面。';
     $('native-list').replaceChildren(...dashboard.groups.map(group => makeCard(group, false)));
     if (!dashboard.groups.length) empty($('native-list'), '一个清爽的开始。', '打开一些网页，连接模型后点击“分析并整理”。');
     renderLibrary();
@@ -176,7 +190,7 @@ $('reveal').addEventListener('click', () => {
   $('reveal').setAttribute('aria-label', reveal ? '隐藏 API 密钥' : '显示 API 密钥');
 });
 $('analyze').addEventListener('click', event => withButton(event.currentTarget, async () => {
-  if (!dashboard?.settings.endpoint || !dashboard.settings.model) { location.hash = 'settings'; notify('先连接一个模型，再开始整理。'); return; }
+  if (!dashboard?.settings.endpoint || !dashboard.settings.model) { location.hash = 'settings'; notify('先配置模型接口，再开始整理。'); return; }
   notify('正在分析，请稍候…');
   await perform('analyze');
 }));

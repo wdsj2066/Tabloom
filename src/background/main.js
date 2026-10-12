@@ -38,9 +38,9 @@ async function dispatch(message) {
   if (windowActions.includes(message.action) && (!Number.isInteger(windowId) || windowId < 0)) throw new Error('无法确定当前浏览器窗口。');
   switch (message.action) {
     case 'dashboard': {
-      const [settings, library, groups, state, tabs, appearance] = await Promise.all([repository.settings(), repository.library(), workspace.currentGroups(windowId), repository.state(windowId), chrome.tabs.query({ windowId }), repository.appearance()]);
+      const [settings, library, groups, state, tabs, appearance, usage] = await Promise.all([repository.settings(), repository.library(), workspace.currentGroups(windowId), repository.state(windowId), chrome.tabs.query({ windowId }), repository.appearance(), repository.usage()]);
       const active = workspace.jobs.has(windowId);
-      return { settings, appearance, library, groups, state: active || !['analysis', 'opening', 'saving', 'organizing'].includes(state.phase) ? state : { phase: 'idle', message: '上一项任务已结束，可以重新整理。' }, tabCount: tabs.length, pendingCount: tabs.filter(tab => tab.groupId === -1 && !tab.pinned && /^https?:\/\//i.test(tab.url || '') && !isNativeNewTab(tab.url)).length };
+      return { settings, appearance, library, groups, usage, state: active || !['analysis', 'opening', 'saving', 'organizing'].includes(state.phase) ? state : { phase: 'idle', message: '上一项任务已结束，可以重新整理。' }, tabCount: tabs.length, pendingCount: tabs.filter(tab => tab.groupId === -1 && !tab.pinned && /^https?:\/\//i.test(tab.url || '') && !isNativeNewTab(tab.url)).length };
     }
     case 'save-settings': return repository.saveSettings(message.value);
     case 'save-appearance': return repository.saveAppearance(message.value);

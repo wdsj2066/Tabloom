@@ -6,6 +6,7 @@ export class Repository {
     this.local = local;
     this.session = session;
     this.writes = Promise.resolve();
+    this.usageWrites = Promise.resolve();
     this.initializing = null;
   }
   initialize() {
@@ -33,6 +34,44 @@ export class Repository {
   }
   async appearance() {
     return { ...DEFAULT_APPEARANCE, ...(await this.local.get(KEYS.appearance))[KEYS.appearance] };
+  }
+  async usage() {
+    const stored = (await this.local.get(KEYS.usage))[KEYS.usage] || {};
+    return {
+      requests: Number.isSafeInteger(stored.requests) && stored.requests >= 0 ? stored.requests : 0,
+      promptTokens: Number.isSafeInteger(stored.promptTokens) && stored.promptTokens >= 0 ? stored.promptTokens : 0,
+      completionTokens: Number.isSafeInteger(stored.completionTokens) && stored.completionTokens >= 0 ? stored.completionTokens : 0,
+      totalTokens: Number.isSafeInteger(stored.totalTokens) && stored.totalTokens >= 0 ? stored.totalTokens : 0,
+      usageResponses: Number.isSafeInteger(stored.usageResponses) && stored.usageResponses >= 0 ? stored.usageResponses : 0,
+      promptResponses: Number.isSafeInteger(stored.promptResponses) && stored.promptResponses >= 0 ? stored.promptResponses : 0,
+      completionResponses: Number.isSafeInteger(stored.completionResponses) && stored.completionResponses >= 0 ? stored.completionResponses : 0,
+      totalResponses: Number.isSafeInteger(stored.totalResponses) && stored.totalResponses >= 0 ? stored.totalResponses : 0
+    };
+  }
+  updateUsage(update) {
+    const transaction = this.usageWrites.then(async () => {
+      const current = await this.usage();
+      const next = update(current);
+      await this.local.set({ [KEYS.usage]: next });
+      return next;
+    });
+    this.usageWrites = transaction.catch(() => {});
+    return transaction;
+  }
+  recordModelRequest() {
+    return this.updateUsage(current => ({ ...current, requests: current.requests + 1 }));
+  }
+  recordModelUsage(usage) {
+    return this.updateUsage(current => ({
+      ...current,
+      promptTokens: current.promptTokens + (usage.promptTokens ?? 0),
+      completionTokens: current.completionTokens + (usage.completionTokens ?? 0),
+      totalTokens: current.totalTokens + (usage.totalTokens ?? 0),
+      usageResponses: current.usageResponses + 1,
+      promptResponses: current.promptResponses + (usage.promptTokens === null ? 0 : 1),
+      completionResponses: current.completionResponses + (usage.completionTokens === null ? 0 : 1),
+      totalResponses: current.totalResponses + (usage.totalTokens === null ? 0 : 1)
+    }));
   }
   async saveAppearance(value) {
     const validated = appearance(value);

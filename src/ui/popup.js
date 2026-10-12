@@ -14,7 +14,7 @@ async function refresh() {
   for (const item of data.library.slice(0, 4)) {
     const row = element('div', 'quick-item');
     const title = element('span', '', item.name); title.title = item.name;
-    const button = element('button', 'secondary', '打开 ↗');
+    const button = element('button', 'secondary', '打开');
     button.addEventListener('click', () => withButton(button, async () => {
       const result = await command('open-saved', { windowId, id: item.id });
       notify(result.message);

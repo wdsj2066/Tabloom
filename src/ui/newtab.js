@@ -12,7 +12,7 @@ function renderCollection(group) {
   const heading = element('div', 'card-heading');
   const name = element('div');
   name.append(element('h3', '', group.name), element('small', '', group.pages.length + ' 个页面'));
-  heading.append(element('span', 'folder-mark', '▤'), name);
+  heading.append(name);
   const list = element('ul', 'page-preview');
   for (const page of group.pages.slice(0, 3)) {
     const item = element('li', '', page.title || new URL(page.url).hostname);
@@ -21,12 +21,12 @@ function renderCollection(group) {
   }
   if (group.pages.length > 3) list.append(element('li', '', '还有 ' + (group.pages.length - 3) + ' 个页面'));
   const actions = element('div', 'card-actions');
-  const open = element('button', 'primary', '↗ 一键打开');
+  const open = element('button', 'primary', '一键打开');
   open.addEventListener('click', () => withButton(open, async () => {
     const result = await command('open-saved', { windowId, id: group.id });
     notify(result.message);
   }));
-  const manage = element('a', 'text-link', '管理 ↗');
+  const manage = element('a', 'text-link', '管理');
   manage.href = 'app.html#collections';
   actions.append(open, manage);
   card.append(heading, list, actions);
@@ -41,7 +41,7 @@ async function load() {
   if (!data.library.length) {
     const empty = element('div', 'empty');
     empty.append(element('strong', '', '把常用页面，留给下次。'), element('p', '', '到管理中心固定一组页面，它就会出现在这里。'));
-    const link = element('a', 'text-link', '创建我的第一组 ↗');
+    const link = element('a', 'text-link', '创建我的第一组');
     link.href = 'app.html#collections';
     empty.append(link);
     container.append(empty);

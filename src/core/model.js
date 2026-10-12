@@ -1,7 +1,26 @@
 import { disclosureUrl, preferences } from './validation.js';
 import { readPlan } from './plan.js';
 
-export async function requestPlan(settings, tabs, groups, signal, transport = fetch) {
+function tokenCount(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const count = Number(value);
+  return Number.isSafeInteger(count) && count >= 0 ? count : null;
+}
+
+export function responseUsage(body) {
+  const usage = body?.usage || body?.usageMetadata || body?.usage_metadata;
+  if (!usage || typeof usage !== 'object') return null;
+  const promptTokens = tokenCount(usage.prompt_tokens ?? usage.promptTokens ?? usage.input_tokens ?? usage.inputTokens ?? usage.promptTokenCount ?? usage.inputTokenCount);
+  const completionTokens = tokenCount(usage.completion_tokens ?? usage.completionTokens ?? usage.output_tokens ?? usage.outputTokens ?? usage.completionTokenCount ?? usage.outputTokenCount);
+  const reportedTotal = tokenCount(usage.total_tokens ?? usage.totalTokenCount ?? usage.totalTokens);
+  if (promptTokens === null && completionTokens === null && reportedTotal === null) return null;
+  const totalTokens = reportedTotal ?? (promptTokens !== null && completionTokens !== null ? promptTokens + completionTokens : null);
+  return { promptTokens, completionTokens, totalTokens };
+}
+
+export async function requestPlan(settings, tabs, groups, signal, transportOrTracking = fetch, suppliedTracking = {}) {
+  const transport = typeof transportOrTracking === 'function' ? transportOrTracking : fetch;
+  const tracking = typeof transportOrTracking === 'function' ? suppliedTracking : transportOrTracking;
   const config = preferences(settings);
   const existingGroups = groups.map(group => typeof group === 'string' ? { name: group, pages: [] } : {
     name: group.name,
@@ -25,6 +44,7 @@ export async function requestPlan(settings, tabs, groups, signal, transport = fe
   };
   let response;
   try {
+    await tracking.onRequest?.();
     response = await transport(config.endpoint, {
       method: 'POST', signal: AbortSignal.any([signal, AbortSignal.timeout(25000)]),
       headers: { 'Content-Type': 'application/json', ...(config.secret ? { Authorization: 'Bearer ' + config.secret } : {}) },
@@ -37,5 +57,7 @@ export async function requestPlan(settings, tabs, groups, signal, transport = fe
   if (!response.ok) throw new Error('模型服务返回 HTTP ' + response.status + '，请检查模型名称、密钥或额度。');
   let body;
   try { body = await response.json(); } catch { throw new Error('模型服务未返回有效 JSON 数据。'); }
+  const usage = responseUsage(body);
+  if (usage) await tracking.onUsage?.(usage);
   return readPlan(body.choices?.[0]?.message?.content, tabs);
 }

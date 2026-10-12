@@ -9,9 +9,9 @@
 | `src/core/config.js` | 产品常量、默认配置、存储键和颜色 |
 | `src/core/validation.js` | 接口、用户配置、网址与固定组验证 |
 | `src/core/plan.js` | 模型分组结果验证及标签快照核对 |
-| `src/core/model.js` | Chat Completions 请求与响应转换 |
+| `src/core/model.js` | Chat Completions 请求、响应转换与用量解析 |
 | `src/core/search.js` | 新标签页搜索引擎与安全网址导航 |
-| `src/background/repository.js` | 本地数据、会话状态、迁移和写入串行化 |
+| `src/background/repository.js` | 本地数据、会话状态、用量统计、迁移和写入串行化 |
 | `src/background/workspace.js` | 按窗口执行分析、固定、恢复和批量操作 |
 | `src/background/main.js` | 事件监听、调度与消息分发 |
 | `src/background/newtab-router.js` | 按开关接管 Chrome / Edge 原生新标签页 |
@@ -37,7 +37,8 @@
 - 每个窗口独立处理任务。同一窗口的重复分析复用正在运行的任务；手动操作取消之前的任务，等待它结束后执行。
 - 网络调用使用 AbortController 和 25 秒超时。停止操作和解散分组可取消在途分析。
 - 固定组写入由后台的单一 Repository 串行化，避免两个管理页面同时修改时覆盖其他记录。
-- `storage.local` 保存 `tabloom.preferences`、`tabloom.library` 和迁移标记；`storage.session` 保存窗口运行状态及 AI 托管组 ID。
+- `storage.local` 保存 `tabloom.preferences`、`tabloom.library`、`tabloom.usage` 和迁移标记；`storage.session` 保存窗口运行状态及 AI 托管组 ID。
+- `tabloom.usage` 在每次发起模型请求时累加请求数；只有响应含可识别的 Token 用量字段时才累加 Token。失败请求仍计入请求数，缺少用量字段的响应不推算 Token。
 - Service worker 重启后，界面将未运行的遗留忙碌状态显示为已结束，用户可以重新整理。
 - 首次启动迁移之前版本的 `modelSettings` 和 `savedGroups`；旧数据原样保留，新代码不再写入旧键。
 
