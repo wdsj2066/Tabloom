@@ -2123,3 +2123,14 @@ body:has(.shell) .settings-card .step {
   background: linear-gradient(145deg,var(--accent-soft),rgba(255,255,255,.035));
   color: var(--accent);
 }
+
+body:has(.shell) select option,
+body:has(.shell) select optgroup {
+  color: var(--ink);
+  background-color: var(--paper);
+}
+
+body:has(.shell) select option:checked {
+  color: var(--accent-contrast);
+  background-color: var(--accent);
+}
