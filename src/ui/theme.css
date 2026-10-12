@@ -915,14 +915,12 @@ body:has(.shell) .brand small {
   letter-spacing: 2px;
 }
 
-body:has(.shell) .sidebar-caption {
-  margin-top: 48px;
-  color: var(--muted);
-  letter-spacing: 1.8px;
-}
-
 body:has(.shell) nav {
   gap: 4px;
+}
+
+body:has(.shell) .sidebar nav {
+  margin-top: 74px;
 }
 
 body:has(.shell) nav a {
