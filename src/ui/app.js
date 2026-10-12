@@ -19,7 +19,7 @@ function route() {
     link.classList.toggle('active', active);
     if (active) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
   }
-  document.title = ({ workspace: '工作台', collections: '固定分组', settings: '模型设置' })[name] + ' · Tabloom';
+  document.title = ({ workspace: '工作台', collections: '固定分组', settings: '设置' })[name] + ' · Tabloom';
   window.scrollTo({ top: 0 });
 }
 
@@ -152,6 +152,25 @@ window.addEventListener('hashchange', route);
 $('search').addEventListener('input', renderLibrary);
 $('refresh').addEventListener('click', event => withButton(event.currentTarget, load));
 $('new-collection').addEventListener('click', () => openEditor());
+const settingsNavButtons = [...document.querySelectorAll('[data-settings-target]')];
+function activateSettingsSection(id) {
+  for (const button of settingsNavButtons) {
+    const active = button.dataset.settingsTarget === id;
+    button.classList.toggle('active', active);
+    if (active) button.setAttribute('aria-current', 'location'); else button.removeAttribute('aria-current');
+  }
+}
+for (const button of settingsNavButtons) button.addEventListener('click', () => {
+  document.getElementById(button.dataset.settingsTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  activateSettingsSection(button.dataset.settingsTarget);
+});
+if ('IntersectionObserver' in window) {
+  const settingsObserver = new IntersectionObserver(entries => {
+    const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (visible) activateSettingsSection(visible.target.id);
+  }, { root: document.querySelector('main'), rootMargin: '-18% 0px -68% 0px', threshold: [0, .1, .25, .5] });
+  for (const section of document.querySelectorAll('[data-setting-section]')) settingsObserver.observe(section);
+}
 for (const id of ['dismiss-editor', 'cancel-editor']) $(id).addEventListener('click', () => $('editor').close());
 for (const [color, label] of Object.entries(COLOR_LABELS)) $('collection-color').add(new Option(label, color));
 $('collection-form').addEventListener('submit', async event => {
@@ -170,7 +189,7 @@ $('settings-form').addEventListener('submit', event => {
   withButton(event.submitter, async () => {
     const settings = await command('save-settings', { value: { endpoint: $('endpoint').value, model: $('model').value, secret: $('secret').value, guidance: $('guidance').value, automatic: $('settings-automatic').checked, includeQuery: $('include-query').checked, settleSeconds: Number($('settle-seconds').value) } });
     populateSettings(settings);
-    notify('模型设置已保存。回到工作台即可开始整理。');
+    notify('模型连接与整理偏好已保存。');
     await load();
   });
 });
@@ -196,7 +215,7 @@ $('analyze').addEventListener('click', event => withButton(event.currentTarget, 
 }));
 $('cancel').addEventListener('click', event => withButton(event.currentTarget, () => perform('cancel')));
 $('automatic').addEventListener('change', event => withButton(event.currentTarget, async () => {
-  if (event.target.checked && (!dashboard?.settings.endpoint || !dashboard.settings.model)) { event.target.checked = false; location.hash = 'settings'; notify('请先填写并保存模型设置。'); return; }
+  if (event.target.checked && (!dashboard?.settings.endpoint || !dashboard.settings.model)) { event.target.checked = false; location.hash = 'settings'; notify('请先完成模型服务配置。'); return; }
   await perform('set-automatic', { value: event.target.checked });
   $('settings-automatic').checked = dashboard.settings.automatic;
 }));

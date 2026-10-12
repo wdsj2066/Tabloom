@@ -1276,6 +1276,123 @@ body:has(.shell) .settings-panel {
   padding: 30px;
 }
 
+body:has(.shell) .settings-page-heading {
+  padding-bottom: 20px;
+}
+
+body:has(.shell) .settings-page-heading h1 {
+  margin-bottom: 8px;
+}
+
+body:has(.shell) .settings-layout {
+  display: grid;
+  grid-template-columns: 168px minmax(0,850px);
+  align-items: start;
+  gap: 24px;
+  padding-bottom: 54px;
+}
+
+body:has(.shell) .settings-index {
+  position: sticky;
+  top: 22px;
+  display: grid;
+  gap: 5px;
+  align-self: start;
+}
+
+body:has(.shell) .settings-index button {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  transition: color .18s,background .18s,border-color .18s;
+}
+
+body:has(.shell) .settings-index button:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+
+body:has(.shell) .settings-index button.active {
+  color: var(--ink);
+  border-color: rgba(211,190,153,.17);
+  background: linear-gradient(112deg,rgba(202,176,132,.13),rgba(255,255,255,.025) 78%);
+}
+
+body:has(.shell) .settings-content {
+  min-width: 0;
+}
+
+body:has(.shell) .settings-stack {
+  display: grid;
+  gap: 14px;
+}
+
+body:has(.shell) .settings-panel.settings-card {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  overflow: hidden;
+  padding: 26px 30px;
+  scroll-margin-top: 22px;
+  background:
+    radial-gradient(ellipse at 100% 0%,rgba(192,166,122,.085),transparent 39%),
+    linear-gradient(132deg,rgba(255,255,255,.035),rgba(255,255,255,.008) 62%),
+    var(--surface);
+  border-color: rgba(255,255,255,.12);
+}
+
+body:has(.shell) .settings-panel.settings-card::after {
+  position: absolute;
+  top: 0;
+  left: 30px;
+  right: 30px;
+  height: 1px;
+  background: linear-gradient(90deg,transparent,rgba(213,191,153,.32),transparent);
+  content: '';
+  pointer-events: none;
+}
+
+body:has(.shell) .settings-card .form-heading {
+  margin-bottom: 20px;
+}
+
+body:has(.shell) .settings-card .step {
+  border: 1px solid rgba(218,196,158,.15);
+  background: linear-gradient(145deg,rgba(206,180,137,.14),rgba(255,255,255,.035));
+  color: rgba(237,222,195,.9);
+}
+
+body:has(.shell) .settings-card .privacy-note {
+  background: linear-gradient(125deg,rgba(126,158,137,.12),rgba(255,255,255,.025));
+}
+
+body:has(.shell) .settings-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 5px 4px 0;
+}
+
+body:has(.shell) .settings-actions span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+body:has(.shell) .settings-content > #settings-newtab {
+  scroll-margin-top: 22px;
+}
+
+body:has(.shell) .settings-content > #settings-newtab .appearance-panel {
+  margin-top: 14px;
+}
+
 body:has(.shell) .form-heading p,
 body:has(.shell) small {
   color: var(--muted);
@@ -1707,5 +1824,44 @@ body.start-body .start-error {
   }
   .section-heading .text-link {
     white-space: nowrap;
+  }
+}
+
+@media(max-width:1360px) {
+  body:has(.shell) .settings-layout {
+    grid-template-columns: minmax(0,1fr);
+    gap: 12px;
+  }
+  body:has(.shell) .settings-index {
+    position: static;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  body:has(.shell) .settings-index::-webkit-scrollbar {
+    display: none;
+  }
+  body:has(.shell) .settings-index button {
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}
+
+@media(max-width:720px) {
+  body:has(.shell) .settings-layout {
+    gap: 8px;
+  }
+  body:has(.shell) .settings-panel.settings-card {
+    padding: 20px 18px;
+  }
+  body:has(.shell) .settings-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  body:has(.shell) .settings-actions button {
+    width: 100%;
   }
 }
