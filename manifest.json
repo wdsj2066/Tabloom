@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Tabloom · 标签集",
+  "version": "3.1.1",
+  "minimum_chrome_version": "124",
+  "description": "用自己的 AI 模型按主题整理标签，保存常用分组，一键回到工作空间。",
+  "icons": { "16": "assets/icon-16.png", "32": "assets/icon-32.png", "48": "assets/icon-48.png", "128": "assets/icon-128.png" },
+  "action": { "default_title": "Tabloom · 标签集", "default_popup": "popup.html", "default_icon": { "16": "assets/icon-16.png", "32": "assets/icon-32.png", "48": "assets/icon-48.png" } },
+  "options_page": "app.html",
+  "permissions": ["tabs", "tabGroups", "storage", "alarms"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "src/background/main.js", "type": "module" },
+  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'none'" }
+}

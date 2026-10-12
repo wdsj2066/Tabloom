@@ -1,0 +1,116 @@
+.start-body {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 50% 0, #efecfa 0, #fafafc 55%);
+}
+.start-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 40px;
+}
+.start-header nav {
+  display: flex;
+  gap: 10px;
+}
+.start-header nav a {
+  padding: 10px 12px;
+  font-size: 12px;
+}
+main.start-main {
+  max-width: 1100px;
+  padding: 0 40px;
+  margin: 0 auto;
+}
+.search-hero {
+  text-align: center;
+  padding: 58px 0 55px;
+}
+.search-hero h1 {
+  font-size: 32px;
+  margin-bottom: 28px;
+}
+.web-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 720px;
+  margin: 0 auto;
+  border: 1px solid #e1ddee;
+  border-radius: 16px;
+  padding: 10px 12px 10px 20px;
+  background: white;
+  box-shadow: 0 10px 35px #4338a409;
+}
+.web-search:focus-within {
+  border-color: #9185d3;
+}
+.web-search .search-mark {
+  font-size: 30px;
+  color: #a19ab6;
+}
+.web-search input:not([type=checkbox]) {
+  border: 0;
+  background: transparent;
+  min-width: 0;
+  padding: 12px 6px;
+  outline: none;
+  font-size: 15px;
+}
+.web-search button {
+  flex-shrink: 0;
+}
+.search-caption {
+  font-size: 11px;
+  color: #9690a6;
+  margin: 12px 0 0;
+}
+.saved-section .section-heading {
+  margin-top: 0;
+}
+.start-main footer {
+  text-align: center;
+  margin-top: 48px;
+}
+.start-error {
+  margin: 80px auto;
+  padding: 20px;
+  max-width: 600px;
+  color: var(--danger);
+}
+@media (max-width: 720px) {
+  .start-header {
+    padding: 20px;
+  }
+  .start-header .brand {
+    font-size: 18px;
+  }
+  .start-header .brand img {
+    width: 34px;
+    height: 34px;
+  }
+  .start-header nav {
+    gap: 0;
+  }
+  .start-header nav a {
+    padding: 8px;
+    font-size: 11px;
+  }
+  main.start-main {
+    padding: 0 20px;
+  }
+  .search-hero {
+    padding: 38px 0 40px;
+  }
+  .search-hero h1 {
+    font-size: 25px;
+  }
+  .web-search {
+    padding: 8px 10px;
+    gap: 5px;
+  }
+  .web-search button {
+    padding: 10px 12px;
+  }
+}

@@ -1,0 +1,197 @@
+import { COLOR_LABELS } from '../core/config.js';
+import { pageAddress } from '../core/validation.js';
+import { command, currentWindowId, element, notify, withButton } from './client.js';
+
+const $ = id => document.getElementById(id);
+const colorValues = { blue: '#5c83d8', cyan: '#4bb5bb', green: '#62b38a', purple: '#9380ca', pink: '#d78eac', yellow: '#c7ad43', orange: '#cf9557', red: '#cf727c', grey: '#9093a4' };
+let windowId;
+let dashboard;
+let refreshTimer;
+let initialSettings = true;
+let editedPages = [];
+let loading = null;
+
+function route() {
+  const name = ['workspace', 'collections', 'settings'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'workspace';
+  for (const view of document.querySelectorAll('[data-view]')) view.hidden = view.dataset.view !== name;
+  for (const link of document.querySelectorAll('[data-route]')) {
+    const active = link.dataset.route === name;
+    link.classList.toggle('active', active);
+    if (active) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
+  }
+  document.title = ({ workspace: '工作台', collections: '固定分组', settings: '模型设置' })[name] + ' · Tabloom';
+  window.scrollTo({ top: 0 });
+}
+
+function empty(container, title, description) {
+  const block = element('div', 'empty');
+  block.append(element('strong', '', title), element('p', '', description));
+  container.append(block);
+}
+
+function makeCard(group, saved) {
+  const card = element('article', 'collection-card');
+  card.style.setProperty('--group-color', colorValues[group.color] || colorValues.blue);
+  const heading = element('div', 'card-heading');
+  const title = element('div');
+  title.append(element('h3', '', group.name), element('small', '', group.pages.length + ' 个页面'));
+  heading.append(element('span', 'folder-mark', '▤'), title);
+  const preview = element('ul', 'page-preview');
+  for (const page of group.pages.slice(0, 3)) {
+    const item = element('li', '', page.title || new URL(page.url).hostname + new URL(page.url).pathname);
+    item.title = page.url;
+    preview.append(item);
+  }
+  if (group.pages.length > 3) preview.append(element('li', '', '还有 ' + (group.pages.length - 3) + ' 个页面'));
+  const actions = element('div', 'card-actions');
+  const action = (label, className, callback) => {
+    const button = element('button', className, label);
+    button.addEventListener('click', () => withButton(button, callback));
+    actions.append(button);
+  };
+  if (saved) {
+    action('↗ 一键打开', 'primary', () => perform('open-saved', { id: group.id }));
+    action('编辑', 'quiet', () => openEditor(group));
+    action('删除', 'quiet', async () => {
+      if (confirm('删除固定组“' + group.name + '”的保存记录？已打开的标签页会保留。')) await perform('delete-collection', { id: group.id });
+    });
+  } else {
+    action('＋ 固定这组', 'secondary', () => perform('save-native', { groupId: group.id }));
+  }
+  card.append(heading, preview, actions);
+  return card;
+}
+
+function renderLibrary() {
+  if (!dashboard) return;
+  const query = $('search').value.trim().toLocaleLowerCase();
+  const groups = dashboard.library.filter(group => [group.name, ...group.pages.map(page => page.title + ' ' + page.url)].join(' ').toLocaleLowerCase().includes(query));
+  $('collection-list').replaceChildren(...groups.map(group => makeCard(group, true)));
+  $('collection-count').textContent = groups.length + ' 个固定组';
+  if (!groups.length) empty($('collection-list'), query ? '没有找到匹配的固定组' : '把常用页面，留给下次。', query ? '换一个关键词试试。' : '从工作台固定现有组，或手动创建你的第一组。');
+}
+
+function populateSettings(settings) {
+  $('endpoint').value = settings.endpoint;
+  $('model').value = settings.model;
+  $('secret').value = settings.secret;
+  $('guidance').value = settings.guidance;
+  $('settings-automatic').checked = settings.automatic;
+  $('include-query').checked = settings.includeQuery;
+  $('settle-seconds').value = settings.settleSeconds;
+}
+
+async function load() {
+  if (loading) return loading;
+  loading = (async () => {
+    dashboard = await command('dashboard', { windowId });
+    $('tab-count').textContent = dashboard.tabCount;
+    $('pending-count').textContent = dashboard.pendingCount;
+    $('library-count').textContent = dashboard.library.length;
+    $('automatic').checked = dashboard.settings.automatic;
+    $('model-summary').textContent = dashboard.settings.model ? '当前模型 · ' + dashboard.settings.model : '尚未连接模型 · 前往模型设置';
+    const busy = ['analysis', 'opening', 'saving', 'organizing'].includes(dashboard.state.phase);
+    $('analyze').disabled = busy;
+    $('cancel').hidden = dashboard.state.phase !== 'analysis';
+    $('analysis-state').textContent = dashboard.state.message || '按共同用途归类，手动整理也会合并 AI 创建的组；保留手动组与固定标签。';
+    $('native-list').replaceChildren(...dashboard.groups.map(group => makeCard(group, false)));
+    if (!dashboard.groups.length) empty($('native-list'), '一个清爽的开始。', '打开一些网页，连接模型后点击“分析并整理”。');
+    renderLibrary();
+    if (initialSettings) {
+      populateSettings(dashboard.settings);
+      $('newtab-enabled').checked = dashboard.appearance.newTabEnabled;
+      $('search-engine').value = dashboard.appearance.searchEngine;
+      initialSettings = false;
+    }
+    if (busy) queueRefresh();
+  })().finally(() => { loading = null; });
+  return loading;
+}
+
+function queueRefresh() {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => load().catch(error => notify(error.message, true)), 700);
+}
+
+async function perform(action, data = {}) {
+  const pending = command(action, { windowId, ...data });
+  queueRefresh();
+  const result = await pending;
+  if (result?.message) notify(result.message);
+  await load();
+  return result;
+}
+
+function openEditor(group) {
+  $('collection-form').reset();
+  $('collection-id').value = group?.id || '';
+  $('collection-name').value = group?.name || '';
+  $('collection-color').value = group?.color || 'blue';
+  $('collection-addresses').value = group?.pages.map(page => page.url).join('\n') || '';
+  $('editor-heading').textContent = group ? '编辑固定组' : '新建固定组';
+  $('editor-error').textContent = '';
+  editedPages = group?.pages || [];
+  $('editor').showModal();
+}
+
+window.addEventListener('hashchange', route);
+$('search').addEventListener('input', renderLibrary);
+$('refresh').addEventListener('click', event => withButton(event.currentTarget, load));
+$('new-collection').addEventListener('click', () => openEditor());
+for (const id of ['dismiss-editor', 'cancel-editor']) $(id).addEventListener('click', () => $('editor').close());
+for (const [color, label] of Object.entries(COLOR_LABELS)) $('collection-color').add(new Option(label, color));
+$('collection-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = event.submitter;
+  button.disabled = true;
+  try {
+    const urls = $('collection-addresses').value.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(pageAddress);
+    const titles = new Map(editedPages.map(page => [page.url, page.title]));
+    await perform('save-collection', { value: { id: $('collection-id').value || undefined, name: $('collection-name').value, color: $('collection-color').value, pages: urls.map(url => ({ url, title: titles.get(url) || '' })) } });
+    $('editor').close();
+  } catch (error) { $('editor-error').textContent = error.message; } finally { button.disabled = false; }
+});
+$('settings-form').addEventListener('submit', event => {
+  event.preventDefault();
+  withButton(event.submitter, async () => {
+    const settings = await command('save-settings', { value: { endpoint: $('endpoint').value, model: $('model').value, secret: $('secret').value, guidance: $('guidance').value, automatic: $('settings-automatic').checked, includeQuery: $('include-query').checked, settleSeconds: Number($('settle-seconds').value) } });
+    populateSettings(settings);
+    notify('模型设置已保存。回到工作台即可开始整理。');
+    await load();
+  });
+});
+$('appearance-form').addEventListener('submit', event => {
+  event.preventDefault();
+  withButton(event.submitter, async () => {
+    notify('正在保存新标签页设置…');
+    await command('save-appearance', { value: { newTabEnabled: $('newtab-enabled').checked, searchEngine: $('search-engine').value } });
+    notify('新标签页设置已保存，下次打开新标签页时生效。');
+    await load();
+  });
+});
+$('reveal').addEventListener('click', () => {
+  const reveal = $('secret').type === 'password';
+  $('secret').type = reveal ? 'text' : 'password';
+  $('reveal').textContent = reveal ? '隐藏' : '显示';
+  $('reveal').setAttribute('aria-label', reveal ? '隐藏 API 密钥' : '显示 API 密钥');
+});
+$('analyze').addEventListener('click', event => withButton(event.currentTarget, async () => {
+  if (!dashboard?.settings.endpoint || !dashboard.settings.model) { location.hash = 'settings'; notify('先连接一个模型，再开始整理。'); return; }
+  notify('正在分析，请稍候…');
+  await perform('analyze');
+}));
+$('cancel').addEventListener('click', event => withButton(event.currentTarget, () => perform('cancel')));
+$('automatic').addEventListener('change', event => withButton(event.currentTarget, async () => {
+  if (event.target.checked && (!dashboard?.settings.endpoint || !dashboard.settings.model)) { event.target.checked = false; location.hash = 'settings'; notify('请先填写并保存模型设置。'); return; }
+  await perform('set-automatic', { value: event.target.checked });
+  $('settings-automatic').checked = dashboard.settings.automatic;
+}));
+$('dissolve').addEventListener('click', event => withButton(event.currentTarget, async () => {
+  if (confirm('解散当前窗口全部浏览器分组，并关闭自动整理？标签页和固定组记录会保留。')) await perform('dissolve');
+}));
+$('close-groups').addEventListener('click', event => withButton(event.currentTarget, async () => {
+  if (confirm('关闭当前窗口所有已分组的标签页？')) await perform('close-groups');
+}));
+chrome.storage.onChanged.addListener(queueRefresh);
+route();
+currentWindowId().then(id => { windowId = id; return load(); }).catch(error => notify(error.message, true));

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>新标签页 · Tabloom</title>
+  <link rel="icon" href="assets/icon-32.png">
+  <link rel="stylesheet" href="src/ui/theme.css">
+  <link rel="stylesheet" href="src/ui/newtab.css">
+</head>
+<body class="start-body">
+  <div id="start-content" hidden>
+    <header class="start-header">
+      <a class="brand" href="app.html#workspace"><img src="assets/icon-48.png" alt=""><span>Tabloom<small>标签集</small></span></a>
+      <nav aria-label="快捷入口"><a href="app.html#collections">管理固定组 ↗</a><a href="app.html#settings">设置</a></nav>
+    </header>
+    <main class="start-main">
+      <section class="search-hero" aria-label="网页搜索">
+        <p class="eyebrow">A CLEAR START</p>
+        <h1>从这里，开始下一件事。</h1>
+        <form id="web-search" class="web-search">
+          <label class="sr-only" for="web-query">搜索网页或输入网址</label>
+          <span class="search-mark" aria-hidden="true">⌕</span>
+          <input id="web-query" type="search" autocomplete="off" placeholder="搜索网页，或输入网址…" required>
+          <button type="submit" class="primary">搜索 ↗</button>
+        </form>
+        <p id="provider-label" class="search-caption"></p>
+      </section>
+      <section class="saved-section" aria-labelledby="saved-heading">
+        <div class="section-heading"><div><h2 id="saved-heading">你的固定组</h2><p>一键打开，回到熟悉的工作空间。</p></div><span id="saved-count" class="muted"></span></div>
+        <div id="start-collections" class="card-grid"></div>
+      </section>
+      <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+      <footer>Tabloom · 为专注留一点空间</footer>
+    </main>
+  </div>
+  <p id="start-error" class="start-error" role="alert" hidden></p>
+  <script type="module" src="src/ui/newtab.js"></script>
+</body>
+</html>
