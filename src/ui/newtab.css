@@ -73,6 +73,40 @@ main.start-main {
   text-align: center;
   margin-top: 48px;
 }
+
+body.start-body .web-search {
+  min-height: 66px;
+  padding: 8px 9px 8px 22px;
+  border-radius: 18px;
+  transition: border-color .18s,box-shadow .18s,background .18s;
+}
+
+body.start-body .web-search:focus-within {
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+body.start-body .web-search input:not([type=checkbox]) {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 4px;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+body.start-body .web-search input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+body.start-body .web-search button {
+  border-radius: 10px;
+  padding: 11px 18px;
+}
+
 .start-error {
   margin: 80px auto;
   padding: 20px;
@@ -109,6 +143,10 @@ main.start-main {
   .web-search {
     padding: 8px 10px;
     gap: 5px;
+  }
+  body.start-body .web-search {
+    min-height: 58px;
+    padding: 7px 7px 7px 15px;
   }
   .web-search button {
     padding: 10px 12px;
