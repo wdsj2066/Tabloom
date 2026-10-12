@@ -1,4 +1,4 @@
-import { command, currentWindowId, element, notify, withButton } from './client.js';
+import { applyTheme, command, currentWindowId, element, notify, withButton } from './client.js';
 
 let windowId;
 let settings;
@@ -6,6 +6,7 @@ let timer;
 let previousPhase;
 async function refresh() {
   const data = await command('dashboard', { windowId });
+  applyTheme(data.theme);
   settings = data.settings;
   document.getElementById('pending').textContent = data.pendingCount;
   document.getElementById('automatic').checked = settings.automatic;

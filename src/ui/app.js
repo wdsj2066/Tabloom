@@ -1,6 +1,6 @@
 import { COLOR_LABELS } from '../core/config.js';
 import { pageAddress } from '../core/validation.js';
-import { command, currentWindowId, element, notify, withButton } from './client.js';
+import { applyTheme, command, currentWindowId, element, notify, withButton } from './client.js';
 
 const $ = id => document.getElementById(id);
 const colorValues = { blue: '#5c83d8', cyan: '#4bb5bb', green: '#62b38a', purple: '#9380ca', pink: '#d78eac', yellow: '#c7ad43', orange: '#cf9557', red: '#cf727c', grey: '#9093a4' };
@@ -98,6 +98,7 @@ async function load() {
   if (loading) return loading;
   loading = (async () => {
     dashboard = await command('dashboard', { windowId });
+    applyTheme(dashboard.theme);
     $('tab-count').textContent = dashboard.tabCount;
     $('pending-count').textContent = dashboard.pendingCount;
     $('library-count').textContent = dashboard.library.length;
@@ -115,6 +116,7 @@ async function load() {
       populateSettings(dashboard.settings);
       $('newtab-enabled').checked = dashboard.appearance.newTabEnabled;
       $('search-engine').value = dashboard.appearance.searchEngine;
+      $('theme-mode').value = dashboard.theme;
       initialSettings = false;
     }
     if (busy) queueRefresh();
@@ -196,9 +198,13 @@ $('settings-form').addEventListener('submit', event => {
 $('appearance-form').addEventListener('submit', event => {
   event.preventDefault();
   withButton(event.submitter, async () => {
-    notify('正在保存新标签页设置…');
-    await command('save-appearance', { value: { newTabEnabled: $('newtab-enabled').checked, searchEngine: $('search-engine').value } });
-    notify('新标签页设置已保存，下次打开新标签页时生效。');
+    notify('正在保存外观设置…');
+    const appearance = { newTabEnabled: $('newtab-enabled').checked, searchEngine: $('search-engine').value };
+    await command('save-appearance', { value: appearance });
+    const theme = $('theme-mode').value;
+    await command('save-theme', { value: theme });
+    applyTheme(theme);
+    notify('外观设置已保存；新标签页开关将在下次打开时生效。');
     await load();
   });
 });

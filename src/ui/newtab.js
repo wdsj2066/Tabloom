@@ -1,6 +1,6 @@
 import { KEYS } from '../core/config.js';
 import { SEARCH_ENGINES, searchAddress } from '../core/search.js';
-import { command, currentWindowId, element, notify, withButton } from './client.js';
+import { applyTheme, command, currentWindowId, element, notify, withButton } from './client.js';
 
 const colors = { blue: '#5c83d8', cyan: '#4bb5bb', green: '#62b38a', purple: '#9380ca', pink: '#d78eac', yellow: '#c7ad43', orange: '#cf9557', red: '#cf727c', grey: '#9093a4' };
 let windowId;
@@ -36,6 +36,7 @@ function renderCollection(group) {
 async function load() {
   const data = await command('start-page');
   appearance = data.appearance;
+  applyTheme(data.theme);
   const container = document.getElementById('start-collections');
   container.replaceChildren(...data.library.map(renderCollection));
   if (!data.library.length) {
@@ -57,7 +58,7 @@ document.getElementById('web-search').addEventListener('submit', event => {
   catch (error) { notify(error.message, true); }
 });
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && (changes[KEYS.library] || changes[KEYS.appearance])) load().catch(showError);
+  if (area === 'local' && (changes[KEYS.library] || changes[KEYS.appearance] || changes[KEYS.theme])) load().catch(showError);
 });
 function showError(error) {
   const node = document.getElementById('start-error');

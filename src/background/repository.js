@@ -1,4 +1,4 @@
-import { DEFAULT_APPEARANCE, DEFAULT_PREFERENCES, KEYS } from '../core/config.js';
+import { DEFAULT_APPEARANCE, DEFAULT_PREFERENCES, DEFAULT_THEME, KEYS } from '../core/config.js';
 import { appearance, collection, preferences } from '../core/validation.js';
 
 export class Repository {
@@ -34,6 +34,15 @@ export class Repository {
   }
   async appearance() {
     return { ...DEFAULT_APPEARANCE, ...(await this.local.get(KEYS.appearance))[KEYS.appearance] };
+  }
+  async theme() {
+    const value = (await this.local.get(KEYS.theme))[KEYS.theme];
+    return value === 'light' || value === 'dark' ? value : DEFAULT_THEME;
+  }
+  async saveTheme(value) {
+    if (value !== 'light' && value !== 'dark') throw new Error('请选择有效的主题颜色。');
+    await this.local.set({ [KEYS.theme]: value });
+    return value;
   }
   async usage() {
     const stored = (await this.local.get(KEYS.usage))[KEYS.usage] || {};

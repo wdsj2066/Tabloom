@@ -38,15 +38,16 @@ async function dispatch(message) {
   if (windowActions.includes(message.action) && (!Number.isInteger(windowId) || windowId < 0)) throw new Error('无法确定当前浏览器窗口。');
   switch (message.action) {
     case 'dashboard': {
-      const [settings, library, groups, state, tabs, appearance, usage] = await Promise.all([repository.settings(), repository.library(), workspace.currentGroups(windowId), repository.state(windowId), chrome.tabs.query({ windowId }), repository.appearance(), repository.usage()]);
+      const [settings, library, groups, state, tabs, appearance, usage, theme] = await Promise.all([repository.settings(), repository.library(), workspace.currentGroups(windowId), repository.state(windowId), chrome.tabs.query({ windowId }), repository.appearance(), repository.usage(), repository.theme()]);
       const active = workspace.jobs.has(windowId);
-      return { settings, appearance, library, groups, usage, state: active || !['analysis', 'opening', 'saving', 'organizing'].includes(state.phase) ? state : { phase: 'idle', message: '上一项任务已结束，可以重新整理。' }, tabCount: tabs.length, pendingCount: tabs.filter(tab => tab.groupId === -1 && !tab.pinned && /^https?:\/\//i.test(tab.url || '') && !isNativeNewTab(tab.url)).length };
+      return { settings, appearance, theme, library, groups, usage, state: active || !['analysis', 'opening', 'saving', 'organizing'].includes(state.phase) ? state : { phase: 'idle', message: '上一项任务已结束，可以重新整理。' }, tabCount: tabs.length, pendingCount: tabs.filter(tab => tab.groupId === -1 && !tab.pinned && /^https?:\/\//i.test(tab.url || '') && !isNativeNewTab(tab.url)).length };
     }
     case 'save-settings': return repository.saveSettings(message.value);
     case 'save-appearance': return repository.saveAppearance(message.value);
+    case 'save-theme': return repository.saveTheme(message.value);
     case 'start-page': {
-      const [appearance, library] = await Promise.all([repository.appearance(), repository.library()]);
-      return { appearance, library };
+      const [appearance, library, theme] = await Promise.all([repository.appearance(), repository.library(), repository.theme()]);
+      return { appearance, library, theme };
     }
     case 'set-automatic': await repository.setAutomatic(message.value); return { message: message.value ? '已开启自动整理。' : '已关闭自动整理。' };
     case 'analyze': return workspace.analyze(windowId);

@@ -840,9 +840,9 @@ dialog::backdrop {
 }
 
 /* Editorial workspace: restrained ink, translucent surfaces, and quiet typography. */
-body:has(.shell),
-body.popup-body,
-body.start-body {
+body:has(.shell).theme-dark,
+body.popup-body.theme-dark,
+body.start-body.theme-dark {
   color-scheme: dark;
   --ink: #f2f1ee;
   --muted: rgba(255,255,255,.62);
@@ -867,6 +867,42 @@ body.start-body {
   --danger-soft: rgba(208,112,112,.12);
   --brand-icon-filter: grayscale(.82) brightness(.82);
   --shadow: 0 18px 50px rgba(0,0,0,.24);
+  --blur-glass: 16px;
+  --radius-control: 12px;
+  --radius-panel: 24px;
+  --font-serif: 'Source Han Serif SC','Noto Serif CJK SC','Songti SC','SimSun',serif;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: 'Segoe UI','Microsoft YaHei',sans-serif;
+}
+
+body:has(.shell).theme-light,
+body.popup-body.theme-light,
+body.start-body.theme-light {
+  color-scheme: light;
+  --ink: #292823;
+  --muted: rgba(41,40,35,.62);
+  --indigo: #3b392f;
+  --mint: #527a64;
+  --line: rgba(46,43,36,.12);
+  --paper: #f3f1ec;
+  --danger: #a7464f;
+  --surface: rgba(255,255,255,.72);
+  --surface-alt: rgba(255,255,255,.9);
+  --float: rgba(255,255,255,.94);
+  --divider: rgba(46,43,36,.1);
+  --field: rgba(255,255,255,.76);
+  --sidebar-surface: rgba(255,255,255,.72);
+  --primary-contrast: #fbfaf7;
+  --focus: rgba(112,91,55,.72);
+  --focus-border: rgba(112,91,55,.42);
+  --placeholder: rgba(41,40,35,.42);
+  --scrollbar: rgba(41,40,35,.24);
+  --backdrop: rgba(35,33,27,.3);
+  --primary-hover: #464238;
+  --danger-soft: rgba(167,70,79,.1);
+  --brand-icon-filter: none;
+  --shadow: 0 18px 50px rgba(57,48,29,.11);
   --blur-glass: 16px;
   --radius-control: 12px;
   --radius-panel: 24px;
@@ -1864,4 +1900,10 @@ body.start-body .start-error {
   body:has(.shell) .settings-actions button {
     width: 100%;
   }
+}
+
+body:has(.shell).theme-light .settings-card .step {
+  border-color: rgba(127,99,49,.16);
+  background: linear-gradient(145deg,rgba(194,163,103,.16),rgba(255,255,255,.72));
+  color: #675433;
 }

@@ -10,6 +10,11 @@ export function element(tag, className, text) {
   if (text !== undefined) node.textContent = text;
   return node;
 }
+export function applyTheme(theme = 'dark') {
+  const selected = theme === 'light' ? 'light' : 'dark';
+  document.body.classList.toggle('theme-light', selected === 'light');
+  document.body.classList.toggle('theme-dark', selected === 'dark');
+}
 let notificationTimer;
 export function notify(text, error = false, { duration = 3200 } = {}) {
   const node = document.getElementById('feedback');
