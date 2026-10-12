@@ -65,9 +65,19 @@
             <form id="appearance-form" class="settings-panel settings-card appearance-panel">
               <div class="form-heading"><span class="step">04</span><div><h2>外观</h2><p>调整主题颜色与新标签页体验。</p></div></div>
               <label for="theme-mode">界面主题</label><select id="theme-mode"><option value="dark">深色</option><option value="light">浅色</option></select>
+              <fieldset class="theme-accent-picker">
+                <legend>强调色</legend>
+                <div class="theme-swatches">
+                  <button type="button" class="theme-swatch" data-theme-accent="blue" aria-pressed="false"><span class="theme-swatch-dot" aria-hidden="true"></span>雾蓝</button>
+                  <button type="button" class="theme-swatch" data-theme-accent="green" aria-pressed="false"><span class="theme-swatch-dot" aria-hidden="true"></span>苔绿</button>
+                  <button type="button" class="theme-swatch" data-theme-accent="purple" aria-pressed="false"><span class="theme-swatch-dot" aria-hidden="true"></span>灰紫</button>
+                  <button type="button" class="theme-swatch" data-theme-accent="graphite" aria-pressed="false"><span class="theme-swatch-dot" aria-hidden="true"></span>石墨</button>
+                </div>
+              </fieldset>
+              <small id="theme-save-status" role="status" aria-live="polite">主题选择会立即应用并自动保存。</small>
               <label class="check-row"><input id="newtab-enabled" type="checkbox"><span>将 Tabloom 设为新标签页<small>开启后，Chrome / Edge 的新标签页显示搜索框和固定组；关闭后保留浏览器原本的新标签页。下次打开时生效。</small></span></label>
               <label for="search-engine">新标签页搜索引擎</label><select id="search-engine"><option value="bing">Bing</option><option value="google">Google</option><option value="duckduckgo">DuckDuckGo</option></select>
-              <div class="appearance-actions"><button class="primary" type="submit">保存外观设置</button><a class="text-link" href="newtab.html#preview" target="_blank">预览新标签页</a></div>
+              <div class="appearance-actions"><button class="primary" type="submit">保存新标签页设置</button><a class="text-link" href="newtab.html#preview" target="_blank">预览新标签页</a></div>
             </form>
           </section>
         </div>

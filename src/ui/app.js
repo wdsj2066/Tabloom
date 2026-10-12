@@ -10,6 +10,11 @@ let refreshTimer;
 let initialSettings = true;
 let editedPages = [];
 let loading = null;
+let currentTheme = { mode: 'dark', accent: 'blue' };
+let lastSavedTheme = { ...currentTheme };
+let themeSaveQueue = Promise.resolve();
+let themeSavePending = 0;
+let themeRevision = 0;
 
 function route() {
   const name = ['workspace', 'collections', 'settings'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'workspace';
@@ -81,6 +86,51 @@ function populateSettings(settings) {
   $('settle-seconds').value = settings.settleSeconds;
 }
 
+function normalizeTheme(theme) {
+  return {
+    mode: theme?.mode === 'light' ? 'light' : 'dark',
+    accent: ['blue', 'green', 'purple', 'graphite'].includes(theme?.accent) ? theme.accent : 'blue'
+  };
+}
+
+function syncThemeControls() {
+  $('theme-mode').value = currentTheme.mode;
+  for (const button of document.querySelectorAll('[data-theme-accent]')) {
+    const active = button.dataset.themeAccent === currentTheme.accent;
+    button.classList.toggle('selected', active);
+    button.setAttribute('aria-pressed', String(active));
+  }
+}
+
+function updateTheme(patch) {
+  const next = { ...currentTheme, ...patch };
+  if (next.mode === currentTheme.mode && next.accent === currentTheme.accent) return;
+  currentTheme = next;
+  applyTheme(currentTheme);
+  syncThemeControls();
+
+  const revision = ++themeRevision;
+  themeSavePending += 1;
+  $('theme-save-status').textContent = '主题已即时应用，正在保存…';
+  const save = themeSaveQueue.catch(() => {}).then(async () => {
+    lastSavedTheme = normalizeTheme(await command('save-theme', { value: next }));
+    if (revision === themeRevision) {
+      $('theme-save-status').textContent = '主题已保存，可以继续调整。';
+      notify('主题已应用并保存。');
+    }
+  }).catch(error => {
+    if (revision === themeRevision) {
+      currentTheme = { ...lastSavedTheme };
+      applyTheme(currentTheme);
+      syncThemeControls();
+      $('theme-save-status').textContent = '主题保存失败，已恢复上次选择。';
+      notify('主题保存失败，已恢复上次设置：' + error.message, true);
+    }
+  }).finally(() => { themeSavePending -= 1; });
+  themeSaveQueue = save.catch(() => {});
+  return save;
+}
+
 function renderUsage(usage = {}) {
   const number = new Intl.NumberFormat('zh-CN');
   const requests = usage.requests || 0;
@@ -98,7 +148,12 @@ async function load() {
   if (loading) return loading;
   loading = (async () => {
     dashboard = await command('dashboard', { windowId });
-    applyTheme(dashboard.theme);
+    if (!themeSavePending) {
+      currentTheme = normalizeTheme(dashboard.theme);
+      lastSavedTheme = { ...currentTheme };
+      applyTheme(currentTheme);
+      syncThemeControls();
+    }
     $('tab-count').textContent = dashboard.tabCount;
     $('pending-count').textContent = dashboard.pendingCount;
     $('library-count').textContent = dashboard.library.length;
@@ -116,7 +171,6 @@ async function load() {
       populateSettings(dashboard.settings);
       $('newtab-enabled').checked = dashboard.appearance.newTabEnabled;
       $('search-engine').value = dashboard.appearance.searchEngine;
-      $('theme-mode').value = dashboard.theme;
       initialSettings = false;
     }
     if (busy) queueRefresh();
@@ -198,16 +252,17 @@ $('settings-form').addEventListener('submit', event => {
 $('appearance-form').addEventListener('submit', event => {
   event.preventDefault();
   withButton(event.submitter, async () => {
-    notify('正在保存外观设置…');
+    notify('正在保存新标签页设置…');
     const appearance = { newTabEnabled: $('newtab-enabled').checked, searchEngine: $('search-engine').value };
     await command('save-appearance', { value: appearance });
-    const theme = $('theme-mode').value;
-    await command('save-theme', { value: theme });
-    applyTheme(theme);
-    notify('外观设置已保存；新标签页开关将在下次打开时生效。');
+    notify('新标签页设置已保存；开关将在下次打开时生效。');
     await load();
   });
 });
+$('theme-mode').addEventListener('change', event => updateTheme({ mode: event.target.value }));
+for (const button of document.querySelectorAll('[data-theme-accent]')) {
+  button.addEventListener('click', () => updateTheme({ accent: button.dataset.themeAccent }));
+}
 $('reveal').addEventListener('click', () => {
   const reveal = $('secret').type === 'password';
   $('secret').type = reveal ? 'text' : 'password';

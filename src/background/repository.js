@@ -37,12 +37,17 @@ export class Repository {
   }
   async theme() {
     const value = (await this.local.get(KEYS.theme))[KEYS.theme];
-    return value === 'light' || value === 'dark' ? value : DEFAULT_THEME;
+    if (value === 'light' || value === 'dark') return { ...DEFAULT_THEME, mode: value };
+    return {
+      mode: value?.mode === 'light' || value?.mode === 'dark' ? value.mode : DEFAULT_THEME.mode,
+      accent: ['blue', 'green', 'purple', 'graphite'].includes(value?.accent) ? value.accent : DEFAULT_THEME.accent
+    };
   }
   async saveTheme(value) {
-    if (value !== 'light' && value !== 'dark') throw new Error('请选择有效的主题颜色。');
-    await this.local.set({ [KEYS.theme]: value });
-    return value;
+    if (!['light', 'dark'].includes(value?.mode) || !['blue', 'green', 'purple', 'graphite'].includes(value?.accent)) throw new Error('请选择有效的主题颜色。');
+    const theme = { mode: value.mode, accent: value.accent };
+    await this.local.set({ [KEYS.theme]: theme });
+    return theme;
   }
   async usage() {
     const stored = (await this.local.get(KEYS.usage))[KEYS.usage] || {};

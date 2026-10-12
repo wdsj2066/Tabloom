@@ -11,9 +11,13 @@ export function element(tag, className, text) {
   return node;
 }
 export function applyTheme(theme = 'dark') {
-  const selected = theme === 'light' ? 'light' : 'dark';
+  const mode = typeof theme === 'string' ? theme : theme?.mode;
+  const selected = mode === 'light' ? 'light' : 'dark';
+  const accents = ['blue', 'green', 'purple', 'graphite'];
+  const accent = accents.includes(theme?.accent) ? theme.accent : 'blue';
   document.body.classList.toggle('theme-light', selected === 'light');
   document.body.classList.toggle('theme-dark', selected === 'dark');
+  for (const name of accents) document.body.classList.toggle('accent-' + name, name === accent);
 }
 let notificationTimer;
 export function notify(text, error = false, { duration = 3200 } = {}) {

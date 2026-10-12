@@ -4,6 +4,6 @@ export const COLOR_LABELS = { blue: '蓝色', cyan: '青色', green: '绿色', p
 export const DEFAULT_PREFERENCES = Object.freeze({ endpoint: '', model: '', secret: '', automatic: false, guidance: '', includeQuery: false, settleSeconds: 20 });
 export const KEYS = { preferences: 'tabloom.preferences', library: 'tabloom.library', migrated: 'tabloom.migrated', appearance: 'tabloom.appearance', theme: 'tabloom.theme', usage: 'tabloom.usage' };
 export const DEFAULT_APPEARANCE = Object.freeze({ newTabEnabled: false, searchEngine: 'bing' });
-export const DEFAULT_THEME = 'dark';
+export const DEFAULT_THEME = Object.freeze({ mode: 'dark', accent: 'blue' });
 export const ALARM_PREFIX = 'tabloom.window.';
 export const BATCH_SIZE = 60;
