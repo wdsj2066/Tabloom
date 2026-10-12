@@ -2124,6 +2124,115 @@ body:has(.shell) .settings-card .step {
   color: var(--accent);
 }
 
+body:has(.shell) .theme-mode-picker {
+  margin: 0 0 20px;
+  padding: 0;
+  border: 0;
+}
+
+body:has(.shell) .theme-mode-picker legend {
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+body:has(.shell) .theme-mode-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+body:has(.shell) .theme-mode-choice {
+  display: flex;
+  flex: 1 1 190px;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--field);
+  color: var(--muted);
+  text-align: left;
+  transition: border-color .18s,background .18s,color .18s,transform .15s;
+}
+
+body:has(.shell) .theme-mode-choice:hover {
+  color: var(--ink);
+  border-color: var(--accent-line);
+}
+
+body:has(.shell) .theme-mode-choice.selected {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: linear-gradient(115deg,var(--accent-soft),var(--field));
+}
+
+body:has(.shell) .theme-mode-preview {
+  position: relative;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 30px;
+  overflow: hidden;
+  border: 1px solid var(--preview-border);
+  border-radius: 7px;
+  background: var(--preview-paper);
+}
+
+body:has(.shell) .theme-mode-preview::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 10px;
+  border-right: 1px solid var(--preview-border);
+  background: var(--preview-rail);
+  content: '';
+}
+
+body:has(.shell) .theme-mode-preview::after {
+  position: absolute;
+  top: 8px;
+  left: 16px;
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--preview-mark);
+  box-shadow: 0 7px 0 var(--preview-line),0 13px 0 var(--preview-line);
+  content: '';
+}
+
+body:has(.shell) .theme-mode-preview-dark {
+  --preview-paper: #18191c;
+  --preview-rail: #222428;
+  --preview-mark: #a9bfdc;
+  --preview-line: rgba(255,255,255,.34);
+  --preview-border: rgba(255,255,255,.17);
+}
+
+body:has(.shell) .theme-mode-preview-light {
+  --preview-paper: #f4f2ed;
+  --preview-rail: #e9e6df;
+  --preview-mark: #58759b;
+  --preview-line: rgba(41,40,35,.28);
+  --preview-border: rgba(46,43,36,.17);
+}
+
+body:has(.shell) .theme-mode-copy {
+  display: grid;
+  gap: 3px;
+}
+
+body:has(.shell) .theme-mode-copy strong {
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+body:has(.shell) .theme-mode-copy small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 body:has(.shell) select option,
 body:has(.shell) select optgroup {
   color: var(--ink);

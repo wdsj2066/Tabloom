@@ -94,7 +94,11 @@ function normalizeTheme(theme) {
 }
 
 function syncThemeControls() {
-  $('theme-mode').value = currentTheme.mode;
+  for (const button of document.querySelectorAll('[data-theme-mode]')) {
+    const active = button.dataset.themeMode === currentTheme.mode;
+    button.classList.toggle('selected', active);
+    button.setAttribute('aria-pressed', String(active));
+  }
   for (const button of document.querySelectorAll('[data-theme-accent]')) {
     const active = button.dataset.themeAccent === currentTheme.accent;
     button.classList.toggle('selected', active);
@@ -261,7 +265,9 @@ $('appearance-form').addEventListener('submit', event => {
     await load();
   });
 });
-$('theme-mode').addEventListener('change', event => updateTheme({ mode: event.target.value }));
+for (const button of document.querySelectorAll('[data-theme-mode]')) {
+  button.addEventListener('click', () => updateTheme({ mode: button.dataset.themeMode }));
+}
 for (const button of document.querySelectorAll('[data-theme-accent]')) {
   button.addEventListener('click', () => updateTheme({ accent: button.dataset.themeAccent }));
 }

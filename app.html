@@ -64,7 +64,13 @@
           <section id="settings-newtab" data-setting-section>
             <form id="appearance-form" class="settings-panel settings-card appearance-panel">
               <div class="form-heading"><span class="step">04</span><div><h2>外观</h2><p>调整主题颜色与新标签页体验。</p></div></div>
-              <label for="theme-mode">界面主题</label><select id="theme-mode"><option value="dark">深色</option><option value="light">浅色</option></select>
+              <fieldset class="theme-mode-picker">
+                <legend>界面主题</legend>
+                <div class="theme-mode-options">
+                  <button type="button" class="theme-mode-choice" data-theme-mode="dark" aria-pressed="false"><span class="theme-mode-preview theme-mode-preview-dark" aria-hidden="true"></span><span class="theme-mode-copy"><strong>深色</strong><small>低光环境下更柔和</small></span></button>
+                  <button type="button" class="theme-mode-choice" data-theme-mode="light" aria-pressed="false"><span class="theme-mode-preview theme-mode-preview-light" aria-hidden="true"></span><span class="theme-mode-copy"><strong>浅色</strong><small>明亮清爽的界面</small></span></button>
+                </div>
+              </fieldset>
               <fieldset class="theme-accent-picker">
                 <legend>强调色</legend>
                 <div class="theme-swatches">
