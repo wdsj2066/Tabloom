@@ -3,6 +3,7 @@ import { command, currentWindowId, element, notify, withButton } from './client.
 let windowId;
 let settings;
 let timer;
+let previousPhase;
 async function refresh() {
   const data = await command('dashboard', { windowId });
   settings = data.settings;
@@ -22,14 +23,19 @@ async function refresh() {
     row.append(title, button); container.append(row);
   }
   if (!data.library.length) container.append(element('p', 'muted', '把常用的一组页面固定在这里。'));
-  if (data.state.message) notify(data.state.message, data.state.phase === 'error');
+  if (data.state.phase === 'analysis' && previousPhase !== 'analysis') {
+    notify(data.state.message || '正在分析页面主题…', false, { duration: 0 });
+  } else if (previousPhase === 'analysis' && data.state.phase !== 'analysis' && data.state.message) {
+    notify(data.state.message, data.state.phase === 'error');
+  }
+  previousPhase = data.state.phase;
 }
 document.getElementById('analyze').addEventListener('click', event => withButton(event.currentTarget, async () => {
   if (!settings.endpoint || !settings.model) {
     await chrome.tabs.create({ url: chrome.runtime.getURL('app.html#settings') });
     return;
   }
-  notify('正在分析页面主题…');
+  notify('正在分析页面主题…', false, { duration: 0 });
   const result = await command('analyze', { windowId });
   notify(result.message);
   await refresh();

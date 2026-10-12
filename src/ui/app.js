@@ -107,7 +107,7 @@ async function load() {
     const busy = ['analysis', 'opening', 'saving', 'organizing'].includes(dashboard.state.phase);
     $('analyze').disabled = busy;
     $('cancel').hidden = dashboard.state.phase !== 'analysis';
-    $('analysis-state').textContent = dashboard.state.message || '相似用途归在一组，保留手动分组和固定页面。';
+    $('analysis-state').textContent = '相似用途归在一组，保留手动分组和固定页面。';
     $('native-list').replaceChildren(...dashboard.groups.map(group => makeCard(group, false)));
     if (!dashboard.groups.length) empty($('native-list'), '一个清爽的开始。', '打开一些网页，连接模型后点击“分析并整理”。');
     renderLibrary();
@@ -191,7 +191,7 @@ $('reveal').addEventListener('click', () => {
 });
 $('analyze').addEventListener('click', event => withButton(event.currentTarget, async () => {
   if (!dashboard?.settings.endpoint || !dashboard.settings.model) { location.hash = 'settings'; notify('先配置模型接口，再开始整理。'); return; }
-  notify('正在分析，请稍候…');
+  notify('正在分析，请稍候…', false, { duration: 0 });
   await perform('analyze');
 }));
 $('cancel').addEventListener('click', event => withButton(event.currentTarget, () => perform('cancel')));

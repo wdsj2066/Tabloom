@@ -10,10 +10,17 @@ export function element(tag, className, text) {
   if (text !== undefined) node.textContent = text;
   return node;
 }
-export function notify(text, error = false) {
+let notificationTimer;
+export function notify(text, error = false, { duration = 3200 } = {}) {
   const node = document.getElementById('feedback');
+  if (!node) return;
+  clearTimeout(notificationTimer);
   node.textContent = text;
   node.classList.toggle('error', error);
+  node.classList.add('visible');
+  if (duration > 0) {
+    notificationTimer = setTimeout(() => node.classList.remove('visible'), duration);
+  }
 }
 export async function withButton(button, action) {
   button.disabled = true;

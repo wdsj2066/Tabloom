@@ -208,10 +208,37 @@ main {
 }
 
 .feedback {
-  min-height: 20px;
+  position: fixed;
+  z-index: 1000;
+  left: 50%;
+  bottom: 24px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  min-height: 0;
   font-size: 13px;
-  margin: 15px 0 0;
-  color: var(--indigo);
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: anywhere;
+  margin: 0;
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control, 12px);
+  color: var(--ink);
+  background: var(--float, #fff);
+  box-shadow: var(--shadow, 0 8px 28px #0002);
+  backdrop-filter: blur(var(--blur-glass, 12px));
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%,8px);
+  pointer-events: none;
+  transition: opacity .18s ease,transform .18s ease,visibility 0s linear .18s;
+}
+
+.feedback.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%,0);
+  transition-delay: 0s;
 }
 
 .feedback.error,.inline-error {
@@ -946,6 +973,8 @@ body:has(.shell) .feedback {
 }
 
 body:has(.shell) .feedback.error,
+body.popup-body .feedback.error,
+body.start-body .feedback.error,
 body:has(.shell) .inline-error {
   color: var(--danger);
 }
