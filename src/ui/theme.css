@@ -1751,6 +1751,28 @@ body.start-body .page-preview li::before {
 
 body.start-body .card-actions {
   border-color: var(--divider);
+  align-items: center;
+  gap: 10px;
+}
+
+body.start-body .collection-manage-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  transition: color .18s,border-color .18s,background .18s;
+}
+
+body.start-body .collection-manage-link:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 body.start-body .start-error {

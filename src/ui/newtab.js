@@ -26,8 +26,9 @@ function renderCollection(group) {
     const result = await command('open-saved', { windowId, id: group.id });
     notify(result.message);
   }));
-  const manage = element('a', 'text-link', '管理');
+  const manage = element('a', 'text-link collection-manage-link', '管理');
   manage.href = 'app.html#collections';
+  manage.setAttribute('aria-label', '管理固定组');
   actions.append(open, manage);
   card.append(heading, list, actions);
   return card;
