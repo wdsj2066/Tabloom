@@ -34,10 +34,45 @@ function renderCollection(group) {
   return card;
 }
 
+function renderBookmarkGroup(group) {
+  const card = element('article', 'collection-card bookmark-group-card');
+  const heading = element('div', 'card-heading');
+  const name = element('div');
+  const count = group.pageCount ?? group.pages.length;
+  name.append(element('h3', '', group.name), element('small', '', [group.path, count + ' 个网页'].filter(Boolean).join(' · ')));
+  heading.append(name);
+  const list = element('ul', 'bookmark-page-grid');
+  for (const page of group.pages) {
+    const url = new URL(page.url);
+    const hostname = url.hostname.replace(/^www\./i, '');
+    const title = page.title || hostname;
+    const item = element('li');
+    const link = element('a', 'bookmark-page-link');
+    link.href = url.href;
+    link.title = url.href;
+    link.setAttribute('aria-label', title + ' · ' + hostname);
+    const mark = element('span', 'bookmark-page-mark', (hostname.split('.')[0] || hostname).slice(0, 1).toLocaleUpperCase());
+    mark.setAttribute('aria-hidden', 'true');
+    const details = element('span', 'bookmark-page-copy');
+    details.append(element('strong', 'bookmark-page-title', title), element('small', 'bookmark-page-host', hostname));
+    link.append(mark, details);
+    item.append(link);
+    list.append(item);
+  }
+  if (count > group.pages.length) list.append(element('li', 'bookmark-page-more', '还有 ' + (count - group.pages.length) + ' 个网页'));
+  card.append(heading, list);
+  return card;
+}
+
 async function load() {
   const data = await command('start-page');
   appearance = data.appearance;
   applyTheme(await loadTheme(data.theme));
+  const bookmarkSection = document.getElementById('bookmark-section');
+  const bookmarkGroups = data.bookmarks || [];
+  document.getElementById('bookmark-collections').replaceChildren(...bookmarkGroups.map(renderBookmarkGroup));
+  document.getElementById('bookmark-count').textContent = bookmarkGroups.length + ' 个收藏夹';
+  bookmarkSection.hidden = !bookmarkGroups.length;
   const container = document.getElementById('start-collections');
   container.replaceChildren(...data.library.map(renderCollection));
   if (!data.library.length) {
@@ -61,6 +96,14 @@ document.getElementById('web-search').addEventListener('submit', event => {
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && (changes[KEYS.library] || changes[KEYS.appearance] || changes[KEYS.theme])) load().catch(showError);
 });
+let bookmarkRefreshTimer;
+function refreshBookmarks() {
+  clearTimeout(bookmarkRefreshTimer);
+  bookmarkRefreshTimer = setTimeout(() => load().catch(showError), 180);
+}
+for (const eventName of ['onCreated', 'onChanged', 'onMoved', 'onRemoved', 'onChildrenReordered', 'onImportEnded']) {
+  chrome.bookmarks?.[eventName]?.addListener(refreshBookmarks);
+}
 function showError(error) {
   const node = document.getElementById('start-error');
   node.textContent = '新标签页加载失败：' + error.message + '。请从扩展弹窗打开设置，或重新加载扩展。';

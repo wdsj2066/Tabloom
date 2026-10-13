@@ -73,6 +73,70 @@ main.start-main {
   text-align: center;
   margin-top: 48px;
 }
+.bookmark-page-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 15px 0 2px;
+}
+.bookmark-page-grid li {
+  min-width: 0;
+}
+.bookmark-page-link {
+  display: grid;
+  grid-template-columns: 30px minmax(0,1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 58px;
+  padding: 8px 9px;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-control);
+  background: var(--field);
+  transition: border-color .18s,background .18s;
+}
+.bookmark-page-link:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.bookmark-page-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 650;
+}
+.bookmark-page-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+.bookmark-page-title,
+.bookmark-page-host {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bookmark-page-title {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 550;
+}
+.bookmark-page-host {
+  color: var(--muted);
+  font-size: 10px;
+}
+.bookmark-page-more {
+  grid-column: 1 / -1;
+  padding: 2px 2px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
 
 body.start-body .web-search {
   min-height: 66px;

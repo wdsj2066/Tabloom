@@ -9,6 +9,28 @@ const workspace = new Workspace(chrome, repository);
 const newTabs = new NewTabRouter(chrome, repository);
 const quietly = promise => Promise.resolve(promise).catch(() => {});
 
+function browserBookmarkGroups(tree) {
+  const root = tree?.[0];
+  const groups = [];
+  function visit(folder, parents = []) {
+    if (!folder || folder.url) return;
+    const name = String(folder.title || '').trim() || '未命名收藏夹';
+    const pages = (folder.children || []).flatMap(node => {
+      if (!node.url) return [];
+      try {
+        const url = new URL(node.url);
+        if (!['http:', 'https:'].includes(url.protocol)) return [];
+        return [{ title: String(node.title || '').trim(), url: url.href }];
+      } catch { return []; }
+    });
+    if (folder !== root && pages.length) groups.push({ name, path: parents.join(' / '), pageCount: pages.length, pages: pages.slice(0, 6) });
+    const nextParents = folder === root ? parents : [...parents, name];
+    for (const child of folder.children || []) if (!child.url) visit(child, nextParents);
+  }
+  if (root) visit(root);
+  return groups;
+}
+
 chrome.tabs.onCreated.addListener(tab => {
   quietly(newTabs.handle(tab));
   if (!tab.pinned && tab.groupId === -1 && isPage(tab.url || tab.pendingUrl) && !isNativeNewTab(tab.url || tab.pendingUrl)) quietly(workspace.schedule(tab.windowId));
@@ -48,8 +70,11 @@ async function dispatch(message) {
     case 'save-appearance': return repository.saveAppearance(message.value);
     case 'save-theme': return repository.saveTheme(message.value);
     case 'start-page': {
-      const [appearance, library, theme] = await Promise.all([repository.appearance(), repository.library(), repository.theme()]);
-      return { appearance, library, theme };
+      const bookmarkGroups = chrome.bookmarks?.getTree
+        ? chrome.bookmarks.getTree().then(browserBookmarkGroups).catch(() => [])
+        : Promise.resolve([]);
+      const [appearance, library, theme, bookmarks] = await Promise.all([repository.appearance(), repository.library(), repository.theme(), bookmarkGroups]);
+      return { appearance, library, theme, bookmarks };
     }
     case 'set-automatic': await repository.setAutomatic(message.value); return { message: message.value ? '已开启自动整理。' : '已关闭自动整理。' };
     case 'analyze': return workspace.analyze(windowId);

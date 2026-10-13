@@ -18,7 +18,7 @@
 | `src/ui/client.js` | 页面与后台之间的消息协议、反馈和按钮状态 |
 | `src/ui/app.js` | 管理中心的路由、表单和视图 |
 | `src/ui/popup.js` | 弹窗快捷入口 |
-| `src/ui/newtab.js` / `newtab.css` | 独立新标签页、搜索、固定组入口及开关恢复 |
+| `src/ui/newtab.js` / `newtab.css` | 独立新标签页、搜索、浏览器收藏夹及固定组入口 |
 | `src/ui/theme.css` | 统一视觉样式和响应式布局 |
 | `assets/` | 新图标原图及 Chrome 所需尺寸 |
 
@@ -37,7 +37,7 @@
 ## 并发与持久化
 
 - 每个窗口独立处理任务。同一窗口的重复分析复用正在运行的任务；手动操作取消之前的任务，等待它结束后执行。
-- 网络调用使用 AbortController 和 25 秒超时。停止操作和解散分组可取消在途分析。
+- 模型请求使用 AbortController 和 25 秒总超时；遇到网络错误、408/425/429、可恢复的服务端错误或无法解析的模型回复时，最多自动重试两次，并按 Retry-After / 退避间隔等待。每次实际发出的重试请求都单独计数。停止操作和解散分组可取消在途分析。
 - 固定组写入由后台的单一 Repository 串行化，避免两个管理页面同时修改时覆盖其他记录。
 - `storage.local` 保存 `tabloom.preferences`、`tabloom.library`、`tabloom.usage`、`tabloom.activity`、可选单价 `tabloom.pricing` 和迁移标记；`storage.session` 保存窗口运行状态、AI 托管组 ID 和可撤销快照。
 - `tabloom.usage` 在每次发起模型请求时累加请求数；只有响应含可识别的 Token 用量字段时才累加 Token。失败请求仍计入请求数，缺少用量字段的响应不推算 Token。
@@ -54,7 +54,7 @@
 
 ## 新标签页
 
-独立的 `tabloom.appearance` 保存开关和搜索引擎，无需完整模型配置；新标签页只请求显示配置与固定组，不获取模型密钥或调用模型。
+独立的 `tabloom.appearance` 保存开关和搜索引擎，无需完整模型配置；新标签页获取显示配置与固定组，并通过浏览器书签 API 在本机读取收藏夹目录中的 HTTP/HTTPS 网页，不获取模型密钥或调用模型。每个收藏夹最多向页面提供六个网页入口。
 
 后台监听标签创建与更新，识别 Chrome / Edge 原生新标签页。仅当开关开启时，重新核对标签当前网址及设置，再导航到本地 `newtab.html`。相同标签的重复事件合并；若用户已经输入其他网址，不覆盖正在进行的导航。
 

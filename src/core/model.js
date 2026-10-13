@@ -1,6 +1,60 @@
 import { disclosureUrl, preferences } from './validation.js';
 import { readPlan } from './plan.js';
 
+const MAX_RETRIES = 2;
+const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504, 520, 521, 522, 524, 529]);
+const RETRY_BASE_MS = 800;
+const MAX_RETRY_WAIT_MS = 10_000;
+const REQUEST_TIMEOUT_MS = 25_000;
+
+function retryAfterMs(response) {
+  const value = response.headers?.get?.('Retry-After');
+  if (!value) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.ceil(seconds * 1000);
+  const date = Date.parse(value);
+  return Number.isNaN(date) ? null : Math.max(0, date - Date.now());
+}
+
+function delayForRetry(retryIndex, response) {
+  const backoff = RETRY_BASE_MS * (2 ** retryIndex);
+  return Math.max(backoff, retryAfterMs(response) ?? 0);
+}
+
+function waitForRetry(delay, signal, userSignal, timeoutSignal) {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(userSignal.aborted ? signal.reason : new Error('模型响应超过 25 秒，请重试或选择更快的模型。'));
+      return;
+    }
+    const finish = callback => {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', onAbort);
+      callback();
+    };
+    const onAbort = () => finish(() => reject(userSignal.aborted ? signal.reason : timeoutSignal.aborted
+      ? new Error('模型响应超过 25 秒，请重试或选择更快的模型。')
+      : signal.reason));
+    const timer = setTimeout(() => finish(resolve), delay);
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+function retryNote(retries) {
+  return retries ? '（已重试 ' + retries + ' 次）' : '';
+}
+
+function modelHttpError(status, retries) {
+  if (status === 429) return new Error('模型服务返回 HTTP 429' + retryNote(retries) + '，请求频率受限或额度不足，请稍后重试或检查服务额度。');
+  if (RETRYABLE_STATUSES.has(status)) return new Error('模型服务暂时不可用，HTTP ' + status + retryNote(retries) + '，请稍后重试。');
+  return new Error('模型服务返回 HTTP ' + status + '，请检查模型名称、密钥或额度。');
+}
+
+function networkError(error, retries) {
+  if (error?.name === 'TimeoutError') return new Error('模型响应超过 25 秒' + retryNote(retries) + '，请重试或选择更快的模型。');
+  return new Error('无法连接模型接口' + retryNote(retries) + '，请检查地址和网络。');
+}
+
 function tokenCount(value) {
   if (value === null || value === undefined || value === '') return null;
   const count = Number(value);
@@ -42,22 +96,62 @@ export async function requestPlan(settings, tabs, groups, signal, transportOrTra
       { role: 'user', content: JSON.stringify({ preference: config.guidance || '按共同用途抽象为少量组，AI 对话统一归为 Chat，避免按品牌细分。', existingNames: existingGroups.map(group => group.name), existingGroups, pages: tabs.map(tab => ({ id: tab.id, title: (tab.title || '').slice(0, 300), address: disclosureUrl(tab.url, config.includeQuery) })) }) }
     ]
   };
-  let response;
-  try {
-    await tracking.onRequest?.(config.model);
-    response = await transport(config.endpoint, {
-      method: 'POST', signal: AbortSignal.any([signal, AbortSignal.timeout(25000)]),
-      headers: { 'Content-Type': 'application/json', ...(config.secret ? { Authorization: 'Bearer ' + config.secret } : {}) },
-      body: JSON.stringify(payload)
-    });
-  } catch (error) {
-    if (signal.aborted) throw error;
-    throw new Error(error.name === 'TimeoutError' ? '模型响应超过 25 秒，请重试或选择更快的模型。' : '无法连接模型接口，请检查地址和网络。');
+  const timeoutSignal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const requestSignal = AbortSignal.any([signal, timeoutSignal]);
+  const headers = { 'Content-Type': 'application/json', ...(config.secret ? { Authorization: 'Bearer ' + config.secret } : {}) };
+  let retries = 0;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+    signal.throwIfAborted();
+    if (timeoutSignal.aborted) throw networkError(timeoutSignal.reason, retries);
+    let response;
+    try {
+      await tracking.onRequest?.(config.model);
+      requestSignal.throwIfAborted();
+      response = await transport(config.endpoint, {
+        method: 'POST', signal: requestSignal, headers, body: JSON.stringify(payload)
+      });
+    } catch (error) {
+      if (signal.aborted) throw error;
+      if (timeoutSignal.aborted) throw networkError(timeoutSignal.reason, retries);
+      if (attempt >= MAX_RETRIES) throw networkError(error, retries);
+      try { await waitForRetry(delayForRetry(attempt), requestSignal, signal, timeoutSignal); }
+      catch (waitError) { if (signal.aborted) throw waitError; throw networkError(waitError, retries); }
+      retries += 1;
+      continue;
+    }
+    if (!response.ok) {
+      const delay = RETRYABLE_STATUSES.has(response.status) ? delayForRetry(attempt, response) : null;
+      if (attempt < MAX_RETRIES && delay !== null && delay <= MAX_RETRY_WAIT_MS) {
+        try { await response.body?.cancel?.(); } catch {}
+        try { await waitForRetry(delay, requestSignal, signal, timeoutSignal); }
+        catch (error) { if (signal.aborted) throw error; throw networkError(error, retries); }
+        retries += 1;
+        continue;
+      }
+      throw modelHttpError(response.status, retries);
+    }
+    let body;
+    try { body = await response.json(); }
+    catch (error) {
+      if (signal.aborted) throw error;
+      if (timeoutSignal.aborted) throw networkError(timeoutSignal.reason, retries);
+      if (attempt >= MAX_RETRIES) throw new Error('模型服务未返回有效 JSON 数据' + retryNote(retries) + '。');
+      try { await waitForRetry(delayForRetry(attempt), requestSignal, signal, timeoutSignal); }
+      catch (waitError) { if (signal.aborted) throw waitError; throw networkError(waitError, retries); }
+      retries += 1;
+      continue;
+    }
+    const usage = responseUsage(body);
+    if (usage) await tracking.onUsage?.(usage, config.model);
+    try { return readPlan(body.choices?.[0]?.message?.content, tabs); }
+    catch (error) {
+      if (signal.aborted) throw error;
+      if (timeoutSignal.aborted) throw networkError(timeoutSignal.reason, retries);
+      if (attempt >= MAX_RETRIES) throw new Error(error.message + retryNote(retries));
+      try { await waitForRetry(delayForRetry(attempt), requestSignal, signal, timeoutSignal); }
+      catch (waitError) { if (signal.aborted) throw waitError; throw networkError(waitError, retries); }
+      retries += 1;
+    }
   }
-  if (!response.ok) throw new Error('模型服务返回 HTTP ' + response.status + '，请检查模型名称、密钥或额度。');
-  let body;
-  try { body = await response.json(); } catch { throw new Error('模型服务未返回有效 JSON 数据。'); }
-  const usage = responseUsage(body);
-  if (usage) await tracking.onUsage?.(usage, config.model);
-  return readPlan(body.choices?.[0]?.message?.content, tabs);
+  throw new Error('模型请求失败，请稍后重试。');
 }
