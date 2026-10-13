@@ -28,12 +28,40 @@ export function modelAddress(value) {
   return parsed.href;
 }
 
+export function normalizeExcludedDomains(input = []) {
+  if (!Array.isArray(input)) throw new Error('排除域名必须按行填写。');
+  if (input.length > 200) throw new Error('最多设置 200 个排除域名。');
+  const domains = new Set();
+  for (const value of input) {
+    let domain = String(value || '').trim().toLowerCase();
+    if (!domain) continue;
+    if (domain.startsWith('*.')) domain = domain.slice(2);
+    if (/[/:?#@\\\s]/.test(domain)) throw new Error('排除列表只填写域名，不要包含协议、路径或端口。');
+    let hostname;
+    try { hostname = new URL('https://' + domain).hostname.toLowerCase().replace(/\.$/, ''); }
+    catch { throw new Error('无效的排除域名：' + value); }
+    const labels = hostname.split('.');
+    const valid = hostname.length <= 253 && labels.every(label => label.length > 0 && label.length <= 63 && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label));
+    if (!valid) throw new Error('无效的排除域名：' + value);
+    domains.add(hostname);
+  }
+  return [...domains];
+}
+
+export function isDomainExcluded(address, domains = []) {
+  let hostname;
+  try { hostname = new URL(address).hostname.toLowerCase().replace(/\.$/, ''); }
+  catch { return false; }
+  return (Array.isArray(domains) ? domains : []).some(domain => hostname === domain || hostname.endsWith('.' + domain));
+}
+
 export function preferences(input = {}) {
   const result = { ...DEFAULT_PREFERENCES, ...input };
   result.endpoint = modelAddress(result.endpoint);
   result.model = String(result.model).trim();
   result.secret = String(result.secret).trim();
   result.guidance = String(result.guidance).trim().slice(0, 4000);
+  result.excludedDomains = normalizeExcludedDomains(result.excludedDomains || []);
   result.automatic = !!result.automatic;
   result.includeQuery = !!result.includeQuery;
   result.settleSeconds = Number(result.settleSeconds);

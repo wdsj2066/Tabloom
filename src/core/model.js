@@ -44,7 +44,7 @@ export async function requestPlan(settings, tabs, groups, signal, transportOrTra
   };
   let response;
   try {
-    await tracking.onRequest?.();
+    await tracking.onRequest?.(config.model);
     response = await transport(config.endpoint, {
       method: 'POST', signal: AbortSignal.any([signal, AbortSignal.timeout(25000)]),
       headers: { 'Content-Type': 'application/json', ...(config.secret ? { Authorization: 'Bearer ' + config.secret } : {}) },
@@ -58,6 +58,6 @@ export async function requestPlan(settings, tabs, groups, signal, transportOrTra
   let body;
   try { body = await response.json(); } catch { throw new Error('模型服务未返回有效 JSON 数据。'); }
   const usage = responseUsage(body);
-  if (usage) await tracking.onUsage?.(usage);
+  if (usage) await tracking.onUsage?.(usage, config.model);
   return readPlan(body.choices?.[0]?.message?.content, tabs);
 }

@@ -876,6 +876,7 @@ body.start-body.theme-dark {
   --blur-glass: 16px;
   --radius-control: 12px;
   --radius-panel: 24px;
+  --control-height: 40px;
   --font-serif: 'Source Han Serif SC','Noto Serif CJK SC','Songti SC','SimSun',serif;
   color: var(--ink);
   background: var(--paper);
@@ -918,6 +919,7 @@ body.start-body.theme-light {
   --blur-glass: 16px;
   --radius-control: 12px;
   --radius-panel: 24px;
+  --control-height: 40px;
   --font-serif: 'Source Han Serif SC','Noto Serif CJK SC','Songti SC','SimSun',serif;
   color: var(--ink);
   background: var(--paper);
@@ -1461,8 +1463,24 @@ body:has(.shell) .secret-field {
   border-radius: var(--radius-control);
 }
 
-body:has(.shell) .secret-field input:not([type=checkbox]) {
+body:has(.shell) .secret-field input:not([type=checkbox]):not([type=hidden]) {
+  border: 0;
+  border-radius: 0;
   background: transparent;
+}
+
+body:has(.shell) .secret-field button {
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+}
+
+body:has(.shell) .secret-field:focus-within {
+  border-color: var(--field-focus-border);
+  outline: none;
+}
+
+body:has(.shell) .secret-field :focus-visible {
+  outline: none;
 }
 
 body:has(.shell) .optional {
@@ -2079,6 +2097,18 @@ body.start-body input:focus-visible {
   outline-color: var(--focus);
 }
 
+body:has(.shell).theme-dark,
+body:has(.shell).theme-light {
+  --field-focus-border: color-mix(in srgb, var(--accent) 11%, transparent);
+}
+
+body:has(.shell) .settings-panel input:focus-visible:not([type=checkbox]):not([type=hidden]),
+body:has(.shell) .settings-panel textarea:focus-visible,
+body:has(.shell) .settings-panel select:focus-visible {
+  border-color: var(--field-focus-border);
+  outline: none;
+}
+
 body:has(.shell) .theme-accent-picker {
   margin: 22px 0 7px;
   padding: 0;
@@ -2459,5 +2489,274 @@ body:has(.shell) .page-editor-empty {
   }
   body:has(.shell) .page-editor-actions button {
     padding: 8px 6px;
+  }
+}
+
+body:has(.shell) .usage-heading h2,
+body:has(.shell) .activity-heading h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+body:has(.shell) .usage-trend {
+  display: grid;
+  grid-template-columns: repeat(7,minmax(0,1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+body:has(.shell) .usage-day {
+  display: grid;
+  grid-template-rows: auto 42px auto auto auto;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+
+body:has(.shell) .usage-day-label,
+body:has(.shell) .usage-day-date {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+body:has(.shell) .usage-day-track {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  width: 100%;
+  height: 42px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+body:has(.shell) .usage-day-bar {
+  display: block;
+  width: min(22px,60%);
+  min-height: 2px;
+  border-radius: 4px 4px 1px 1px;
+  background: var(--accent);
+  opacity: .78;
+}
+
+body:has(.shell) .usage-day strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+}
+
+body:has(.shell) .usage-day small {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body:has(.shell) .usage-trend-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+body:has(.shell) .usage-pricing {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+
+body:has(.shell) .usage-pricing summary {
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 550;
+}
+
+body:has(.shell) .usage-pricing > p {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+body:has(.shell) .usage-pricing-form {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr)) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+body:has(.shell) .pricing-field label {
+  display: block;
+  margin: 10px 0 6px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+body:has(.shell) .pricing-field input {
+  min-height: var(--control-height);
+  padding: 8px 10px;
+  font-size: 11px;
+}
+
+body:has(.shell) .usage-pricing-form button {
+  min-height: var(--control-height);
+  padding: 0 13px;
+  white-space: nowrap;
+}
+
+body:has(.shell) .usage-estimate {
+  margin-bottom: 0;
+  color: var(--ink) !important;
+  font-size: 11px !important;
+  font-variant-numeric: tabular-nums;
+}
+
+body:has(.shell) .activity-section {
+  margin: 22px 0 34px;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur-glass));
+}
+
+body:has(.shell) .activity-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+body:has(.shell) .activity-heading p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+body:has(.shell) .activity-list {
+  display: grid;
+  gap: 0;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+body:has(.shell) .activity-item {
+  padding: 12px 0;
+  border-top: 1px solid var(--divider);
+}
+
+body:has(.shell) .activity-item-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+body:has(.shell) .activity-item-heading strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+body:has(.shell) .activity-item time,
+body:has(.shell) .activity-item p,
+body:has(.shell) .activity-empty {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+body:has(.shell) .activity-item p {
+  margin: 5px 0 0;
+  line-height: 1.55;
+}
+
+body:has(.shell) .activity-empty {
+  margin: 14px 0 0;
+}
+
+body:has(.shell) .collection-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body:has(.shell) .collection-heading-actions button {
+  min-height: var(--control-height);
+  padding: 0 14px;
+  line-height: 1;
+}
+
+body:has(.shell) .page-editor-tools {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+body:has(.shell) .page-editor-tools button {
+  min-height: var(--control-height);
+  box-sizing: border-box;
+  line-height: 1;
+}
+
+body:has(.shell) .page-editor-tools button:disabled {
+  cursor: default;
+}
+
+body:has(.shell) .page-duplicate-note {
+  margin-top: 3px;
+  color: var(--danger);
+  font-size: 10px;
+}
+
+body:has(.shell) .page-editor-row.is-duplicate {
+  border-color: var(--danger);
+}
+
+body:has(.shell) .page-editor-row.is-duplicate [data-page-url] {
+  border-color: var(--danger);
+}
+
+body:has(.shell) #excluded-domains {
+  min-height: 94px;
+  resize: vertical;
+}
+
+@media(max-width:720px) {
+  body:has(.shell) .usage-trend {
+    grid-template-columns: repeat(7,minmax(68px,1fr));
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  body:has(.shell) .usage-pricing-form {
+    grid-template-columns: 1fr;
+  }
+  body:has(.shell) .usage-pricing-form button {
+    justify-self: start;
+  }
+  body:has(.shell) .activity-section {
+    padding: 18px 16px;
+  }
+  body:has(.shell) .activity-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  body:has(.shell) .collection-heading-actions {
+    flex-wrap: wrap;
+  }
+  body:has(.shell) .page-editor-tools {
+    justify-content: flex-start;
   }
 }

@@ -7,11 +7,11 @@
 | 路径 | 职责 |
 | --- | --- |
 | `src/core/config.js` | 产品常量、默认配置、存储键和颜色 |
-| `src/core/validation.js` | 接口、用户配置、网址与固定组验证 |
+| `src/core/validation.js` | 接口、用户配置、排除域名、网址与固定组验证 |
 | `src/core/plan.js` | 模型分组结果验证及标签快照核对 |
 | `src/core/model.js` | Chat Completions 请求、响应转换与用量解析 |
 | `src/core/search.js` | 新标签页搜索引擎与安全网址导航 |
-| `src/background/repository.js` | 本地数据、会话状态、用量统计、迁移和写入串行化 |
+| `src/background/repository.js` | 本地数据、会话状态、操作记录、用量统计、迁移和写入串行化 |
 | `src/background/workspace.js` | 按窗口执行分析、固定、恢复和批量操作 |
 | `src/background/main.js` | 事件监听、调度与消息分发 |
 | `src/background/newtab-router.js` | 按开关接管 Chrome / Edge 原生新标签页 |
@@ -30,6 +30,8 @@
 
 分组前重新查询标签，核对 URL、固定状态和分析前的分组 ID。被关闭、跳转或手动分组的标签跳过。已经成功应用的批次不会因后续批次失败而撤销；操作状态显示失败信息。
 
+整理会话会将每个被移动标签的 ID、URL、原分组/顺序和整理后分组写入 `storage.session`。用户撤销时只恢复仍存在、URL 未变化、仍在整理后分组且组内顺序未被用户调整的标签；已关闭、重新分组或调整顺序的标签跳过。原 AI 分组若已被浏览器删除，会按原名称和颜色重建。撤销快照在浏览器会话结束后失效。最近 30 条整理记录只保存时间、数量和结果，不保存标签 URL。
+
 只复用当前会话内标记为 AI 托管的浏览器组。用户修改组名后不会再根据旧名称追加；保存为固定组时解除 AI 托管。固定组恢复时创建新的标签和浏览器组，失败则只回滚本次创建的标签。
 
 ## 并发与持久化
@@ -37,8 +39,12 @@
 - 每个窗口独立处理任务。同一窗口的重复分析复用正在运行的任务；手动操作取消之前的任务，等待它结束后执行。
 - 网络调用使用 AbortController 和 25 秒超时。停止操作和解散分组可取消在途分析。
 - 固定组写入由后台的单一 Repository 串行化，避免两个管理页面同时修改时覆盖其他记录。
-- `storage.local` 保存 `tabloom.preferences`、`tabloom.library`、`tabloom.usage` 和迁移标记；`storage.session` 保存窗口运行状态及 AI 托管组 ID。
+- `storage.local` 保存 `tabloom.preferences`、`tabloom.library`、`tabloom.usage`、`tabloom.activity`、可选单价 `tabloom.pricing` 和迁移标记；`storage.session` 保存窗口运行状态、AI 托管组 ID 和可撤销快照。
 - `tabloom.usage` 在每次发起模型请求时累加请求数；只有响应含可识别的 Token 用量字段时才累加 Token。失败请求仍计入请求数，缺少用量字段的响应不推算 Token。
+- 用量同时按本机日期保存最近 90 天的请求和 Token 聚合；历史累计数不受日数据保留期限影响。
+- 可选费用仅按用户填写的输入/输出单价和已返回 Token 估算，不连接价格服务，也不推断真实账单。
+- `excludedDomains` 在进入分批请求前匹配主机名及其子域名，不会随模型请求发送。
+- 固定组 JSON 备份只包含名称、颜色和页面数据；导入会校验全部记录后原子追加，并生成新的内部 ID。
 - Service worker 重启后，界面将未运行的遗留忙碌状态显示为已结束，用户可以重新整理。
 - 首次启动迁移之前版本的 `modelSettings` 和 `savedGroups`；旧数据原样保留，新代码不再写入旧键。
 

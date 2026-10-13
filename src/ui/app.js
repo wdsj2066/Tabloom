@@ -83,7 +83,14 @@ function populateSettings(settings) {
   $('guidance').value = settings.guidance;
   $('settings-automatic').checked = settings.automatic;
   $('include-query').checked = settings.includeQuery;
+  $('excluded-domains').value = (Array.isArray(settings.excludedDomains) ? settings.excludedDomains : []).join('\n');
   $('settle-seconds').value = settings.settleSeconds;
+}
+
+function populatePricing(pricing = {}) {
+  $('pricing-currency').value = pricing.currency || '¥';
+  $('pricing-input').value = pricing.inputPerMillion ?? '';
+  $('pricing-output').value = pricing.outputPerMillion ?? '';
 }
 
 function normalizeTheme(theme) {
@@ -147,7 +154,9 @@ function makePageEditorRow(page = {}) {
   urlInput.dataset.pageUrl = '';
   const urlField = element('label', 'page-editor-field page-editor-url');
   urlField.htmlFor = urlInput.id;
-  urlField.append(element('span', '', '页面网址'), urlInput);
+  const duplicateNote = element('small', 'page-duplicate-note', '与前面的页面重复');
+  duplicateNote.hidden = true;
+  urlField.append(element('span', '', '页面网址'), urlInput, duplicateNote);
 
   const actions = element('div', 'page-editor-actions');
   const move = (label, delta, ariaLabel) => {
@@ -180,13 +189,27 @@ function makePageEditorRow(page = {}) {
 
 function updatePageEditorState() {
   const rows = [...$('page-editor-list').children];
+  const seen = new Set();
+  let duplicateCount = 0;
   $('page-count').textContent = rows.length + ' / 300';
   $('add-page').disabled = rows.length >= 300;
   $('page-editor-empty').hidden = rows.length > 0;
   rows.forEach((row, index) => {
     row.querySelector('.page-order-button[aria-label="上移此页面"]').disabled = index === 0;
     row.querySelector('.page-order-button[aria-label="下移此页面"]').disabled = index === rows.length - 1;
+    const urlInput = row.querySelector('[data-page-url]');
+    const warning = row.querySelector('.page-duplicate-note');
+    let duplicate = false;
+    try {
+      const address = pageAddress(urlInput.value.trim());
+      duplicate = seen.has(address);
+      seen.add(address);
+    } catch {}
+    row.classList.toggle('is-duplicate', duplicate);
+    warning.hidden = !duplicate;
+    if (duplicate) duplicateCount += 1;
   });
+  $('remove-duplicate-pages').disabled = duplicateCount === 0;
 }
 
 function renderPageEditor(pages) {
@@ -224,17 +247,82 @@ function updateTheme(patch) {
   return save;
 }
 
-function renderUsage(usage = {}) {
+function renderUsage(usage = {}, pricing = {}) {
   const number = new Intl.NumberFormat('zh-CN');
   const requests = usage.requests || 0;
   $('request-count').textContent = number.format(requests);
-  $('token-total').textContent = usage.totalResponses ? number.format(usage.totalTokens) : requests ? '—' : '0';
+  const partialTotals = usage.usageResponses > usage.totalResponses;
+  $('token-total').textContent = usage.totalResponses ? (partialTotals ? '≥ ' : '') + number.format(usage.totalTokens) : requests ? '—' : '0';
 
   const details = [];
   if (usage.promptResponses) details.push('输入 ' + number.format(usage.promptTokens));
   if (usage.completionResponses) details.push('输出 ' + number.format(usage.completionTokens));
   if (usage.totalResponses) details.push('已返回用量 ' + number.format(usage.totalResponses) + ' 次');
+  if (partialTotals) details.push('部分响应未提供总量，显示已知合计');
   $('token-breakdown').textContent = details.join(' · ') || (requests ? '接口未返回 Token 用量' : '等待模型返回用量');
+  const hasRates = pricing.inputPerMillion !== null && pricing.inputPerMillion !== undefined && pricing.outputPerMillion !== null && pricing.outputPerMillion !== undefined;
+  const hasSplitUsage = usage.promptResponses || usage.completionResponses;
+  if (!hasRates) $('usage-estimate').textContent = '尚未设置完整单价，费用估算已关闭。';
+  else if (!hasSplitUsage) $('usage-estimate').textContent = '暂无可用于估算的输入、输出 Token 用量。';
+  else {
+    const amount = (usage.promptTokens * pricing.inputPerMillion + usage.completionTokens * pricing.outputPerMillion) / 1_000_000;
+    const formatted = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(amount);
+    $('usage-estimate').textContent = '累计估算：' + pricing.currency + formatted + ' · 仅按接口返回的 Token 计算。';
+  }
+
+  const trend = $('usage-trend');
+  const daily = new Map((usage.daily || []).map(item => [item.date, item]));
+  const days = [];
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - offset);
+    const key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    days.push(daily.get(key) || { date: key, requests: 0, totalTokens: 0, totalResponses: 0 });
+  }
+  if (!days.some(item => item.requests || item.totalTokens)) {
+    trend.replaceChildren(element('p', 'usage-trend-empty', '近七天暂无模型请求。'));
+    return;
+  }
+  const maxRequests = Math.max(1, ...days.map(item => item.requests));
+  const weekday = new Intl.DateTimeFormat('zh-CN', { weekday: 'short' });
+  trend.replaceChildren(...days.map(item => {
+    const date = new Date(item.date + 'T12:00:00');
+    const card = element('div', 'usage-day');
+    const label = element('span', 'usage-day-label', weekday.format(date));
+    const barTrack = element('div', 'usage-day-track');
+    const bar = element('span', 'usage-day-bar');
+    bar.style.height = item.requests ? Math.max(8, item.requests / maxRequests * 100) + '%' : '2px';
+    barTrack.append(bar);
+    const requestValue = element('strong', '', number.format(item.requests));
+    const tokenValue = element('small', '', item.totalResponses ? number.format(item.totalTokens) + ' Token' : '— Token');
+    const dateLabel = element('span', 'usage-day-date', item.date.slice(5).replace('-', '/'));
+    card.append(label, barTrack, requestValue, tokenValue, dateLabel);
+    card.title = item.date + ' · ' + number.format(item.requests) + ' 次请求 · ' + (item.totalResponses ? number.format(item.totalTokens) + ' Token' : '未返回 Token 用量');
+    return card;
+  }));
+}
+
+function renderActivity(items = [], undo, busy = false) {
+  const list = $('activity-list');
+  const recent = items.slice(0, 8);
+  $('activity-empty').hidden = recent.length > 0;
+  list.hidden = recent.length === 0;
+  list.replaceChildren(...recent.map(item => {
+    const row = element('li', 'activity-item');
+    const heading = element('div', 'activity-item-heading');
+    const title = element('strong', '', item.type === 'undo' ? '撤销整理' : '整理');
+    const time = element('time', '', new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(item.time));
+    time.dateTime = new Date(item.time).toISOString();
+    heading.append(title, time);
+    const summary = element('p', '', item.message || ((item.pages || 0) + ' 个页面 · ' + (item.groups || 0) + ' 个分组'));
+    row.append(heading, summary);
+    return row;
+  }));
+  const canUndo = !!undo?.pages?.length;
+  $('undo-analysis').hidden = !canUndo;
+  $('undo-analysis').disabled = busy;
+  if (canUndo) $('undo-analysis').textContent = '撤销上次整理（' + undo.pages.length + '）';
 }
 
 async function load() {
@@ -251,18 +339,20 @@ async function load() {
     $('tab-count').textContent = dashboard.tabCount;
     $('pending-count').textContent = dashboard.pendingCount;
     $('library-count').textContent = dashboard.library.length;
-    renderUsage(dashboard.usage);
+    renderUsage(dashboard.usage, dashboard.pricing);
     $('automatic').checked = dashboard.settings.automatic;
     $('model-summary').textContent = dashboard.settings.model ? '使用模型 · ' + dashboard.settings.model : '尚未连接模型 · 前往设置';
     const busy = ['analysis', 'opening', 'saving', 'organizing'].includes(dashboard.state.phase);
     $('analyze').disabled = busy;
     $('cancel').hidden = dashboard.state.phase !== 'analysis';
     $('analysis-state').textContent = '相似用途归在一组，保留手动分组和固定页面。';
+    renderActivity(dashboard.activity || [], dashboard.undo, busy);
     $('native-list').replaceChildren(...dashboard.groups.map(group => makeCard(group, false)));
-    if (!dashboard.groups.length) empty($('native-list'), '一个清爽的开始。', '打开一些网页，连接模型后点击“分析并整理”。');
+    if (!dashboard.groups.length) empty($('native-list'), '一个清爽的开始。', '打开一些网页，连接模型后点击“开始整理”。');
     renderLibrary();
     if (initialSettings) {
       populateSettings(dashboard.settings);
+      populatePricing(dashboard.pricing);
       $('newtab-enabled').checked = dashboard.appearance.newTabEnabled;
       setSearchEngine(dashboard.appearance.searchEngine);
       initialSettings = false;
@@ -347,25 +437,49 @@ $('collection-form').addEventListener('submit', async event => {
     $('editor').close();
   } catch (error) { $('editor-error').textContent = error.message; } finally { if (button) button.disabled = false; }
 });
-$('page-editor-list').addEventListener('input', () => { $('editor-error').textContent = ''; });
+$('page-editor-list').addEventListener('input', () => { $('editor-error').textContent = ''; updatePageEditorState(); });
 $('add-page').addEventListener('click', () => {
   const row = makePageEditorRow();
   $('page-editor-list').append(row);
+  $('editor-error').textContent = '';
   updatePageEditorState();
   row.querySelector('[data-page-title]').focus();
 });
+$('remove-duplicate-pages').addEventListener('click', () => {
+  const seen = new Set();
+  for (const row of [...$('page-editor-list').children]) {
+    const input = row.querySelector('[data-page-url]');
+    try {
+      const address = pageAddress(input.value.trim());
+      if (seen.has(address)) row.remove();
+      else seen.add(address);
+    } catch {}
+  }
+  $('editor-error').textContent = '';
+  updatePageEditorState();
+});
 $('settings-form').addEventListener('submit', event => {
   event.preventDefault();
-  withButton(event.submitter, async () => {
-    const settings = await command('save-settings', { value: { endpoint: $('endpoint').value, model: $('model').value, secret: $('secret').value, guidance: $('guidance').value, automatic: $('settings-automatic').checked, includeQuery: $('include-query').checked, settleSeconds: Number($('settle-seconds').value) } });
+  withButton(event.submitter || $('settings-form').querySelector('button[type="submit"]'), async () => {
+    const settings = await command('save-settings', { value: { endpoint: $('endpoint').value, model: $('model').value, secret: $('secret').value, guidance: $('guidance').value, automatic: $('settings-automatic').checked, includeQuery: $('include-query').checked, excludedDomains: $('excluded-domains').value.split(/\r?\n/).map(domain => domain.trim()).filter(Boolean), settleSeconds: Number($('settle-seconds').value) } });
     populateSettings(settings);
     notify('模型连接与整理偏好已保存。');
     await load();
   });
 });
+$('pricing-form').addEventListener('submit', event => {
+  event.preventDefault();
+  withButton(event.submitter || $('pricing-form').querySelector('button[type="submit"]'), async () => {
+    const pricing = await command('save-pricing', { value: { currency: $('pricing-currency').value, inputPerMillion: $('pricing-input').value, outputPerMillion: $('pricing-output').value } });
+    dashboard.pricing = pricing;
+    populatePricing(pricing);
+    renderUsage(dashboard.usage, pricing);
+    notify(pricing.inputPerMillion === null ? '费用估算已关闭。' : '估算单价已保存在本机。');
+  });
+});
 $('appearance-form').addEventListener('submit', event => {
   event.preventDefault();
-  withButton(event.submitter, async () => {
+  withButton(event.submitter || $('appearance-form').querySelector('button[type="submit"]'), async () => {
     notify('正在保存新标签页设置…');
     const appearance = { newTabEnabled: $('newtab-enabled').checked, searchEngine: $('search-engine').value };
     await command('save-appearance', { value: appearance });
@@ -402,6 +516,36 @@ $('automatic').addEventListener('change', event => withButton(event.currentTarge
 $('dissolve').addEventListener('click', event => withButton(event.currentTarget, async () => {
   if (confirm('解散当前窗口全部浏览器分组，并关闭自动整理？标签页和固定组记录会保留。')) await perform('dissolve');
 }));
+$('undo-analysis').addEventListener('click', event => withButton(event.currentTarget, () => perform('undo')));
+$('import-collections').addEventListener('click', () => $('collection-import-file').click());
+$('collection-import-file').addEventListener('change', async event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    if (file.size > 5 * 1024 * 1024) throw new Error('导入文件不能超过 5 MB。');
+    const backup = JSON.parse(await file.text());
+    if (backup?.format !== 'tabloom-collections' || backup.version !== 1 || !Array.isArray(backup.collections)) throw new Error('这不是受支持的 Tabloom 固定组备份文件。');
+    if (!backup.collections.length) throw new Error('备份文件里没有固定组。');
+    if (backup.collections.length > 500) throw new Error('一次最多导入 500 个固定组。');
+    if (!confirm('将作为新记录导入 ' + backup.collections.length + ' 个固定组，不会覆盖现有内容。继续吗？')) return;
+    await perform('import-collections', { collections: backup.collections });
+  } catch (error) { notify(error.message, true); }
+  finally { event.target.value = ''; }
+});
+$('export-collections').addEventListener('click', () => {
+  const collections = (dashboard?.library || []).map(({ name, color, pages }) => ({ name, color, pages: pages.map(({ url, title }) => ({ url, title })) }));
+  if (!collections.length) { notify('当前没有可导出的固定组。', true); return; }
+  const backup = { format: 'tabloom-collections', version: 1, exportedAt: new Date().toISOString(), collections };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
+  const link = element('a');
+  link.href = url;
+  link.download = 'tabloom-fixed-groups-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  notify('固定组备份已导出。');
+});
 $('close-groups').addEventListener('click', event => withButton(event.currentTarget, async () => {
   if (confirm('关闭当前窗口所有已分组的标签页？')) await perform('close-groups');
 }));
