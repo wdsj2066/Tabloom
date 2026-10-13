@@ -976,9 +976,10 @@ body:has(.shell) .sidebar nav {
 body:has(.shell) nav a {
   min-height: 44px;
   padding: 11px 14px;
+  border: 1px solid transparent;
   border-radius: var(--radius-control);
   color: var(--muted);
-  transition: color .15s, background .15s;
+  transition: color .15s, background .15s, border-color .15s;
 }
 
 body:has(.shell) nav a:hover {
@@ -2076,7 +2077,8 @@ body.popup-body input[type=checkbox] {
 
 body:has(.shell) nav a.active {
   color: var(--accent);
-  background: linear-gradient(110deg,var(--accent-soft),transparent 90%);
+  background: var(--surface-alt);
+  border-color: var(--accent-line);
 }
 
 body:has(.shell) .settings-index button.active {
