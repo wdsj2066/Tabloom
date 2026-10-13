@@ -23,7 +23,7 @@ function browserBookmarkGroups(tree) {
         return [{ title: String(node.title || '').trim(), url: url.href }];
       } catch { return []; }
     });
-    if (folder !== root && pages.length) groups.push({ name, path: parents.join(' / '), pageCount: pages.length, pages: pages.slice(0, 6) });
+    if (folder !== root && pages.length) groups.push({ name, path: parents.join(' / '), pageCount: pages.length, pages });
     const nextParents = folder === root ? parents : [...parents, name];
     for (const child of folder.children || []) if (!child.url) visit(child, nextParents);
   }

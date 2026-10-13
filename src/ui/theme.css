@@ -26,6 +26,26 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
 body {
   margin: 0;
 }
@@ -840,6 +860,7 @@ dialog::backdrop {
 }
 
 /* Editorial workspace: restrained ink, translucent surfaces, and quiet typography. */
+html:has(> body.theme-dark),
 body:has(.shell).theme-dark,
 body.popup-body.theme-dark,
 body.start-body.theme-dark {
@@ -850,6 +871,10 @@ body.start-body.theme-dark {
   --mint: #8fbf9f;
   --line: rgba(255,255,255,.15);
   --paper: #101012;
+  --ambient-glow: color-mix(in srgb,var(--accent) 24%,transparent);
+  --ambient-glow-soft: color-mix(in srgb,var(--accent) 16%,transparent);
+  --ambient-glow-faint: color-mix(in srgb,var(--accent) 10%,transparent);
+  --ambient-dot: color-mix(in srgb,var(--accent) 18%,transparent);
   --danger: #d07070;
   --accent: #a9bfdc;
   --accent-contrast: #171b21;
@@ -877,12 +902,17 @@ body.start-body.theme-dark {
   --radius-control: 12px;
   --radius-panel: 24px;
   --control-height: 40px;
+  --button-glass: color-mix(in srgb,var(--surface-alt) 65%,transparent);
+  --button-glass-hover: color-mix(in srgb,var(--surface-alt) 85%,transparent);
+  --button-primary-glass: color-mix(in srgb,var(--accent) 14%,var(--button-glass));
+  --button-primary-glass-hover: color-mix(in srgb,var(--accent) 21%,var(--button-glass-hover));
   --font-serif: 'Source Han Serif SC','Noto Serif CJK SC','Songti SC','SimSun',serif;
   color: var(--ink);
   background: var(--paper);
   font-family: 'Segoe UI','Microsoft YaHei',sans-serif;
 }
 
+html:has(> body.theme-light),
 body:has(.shell).theme-light,
 body.popup-body.theme-light,
 body.start-body.theme-light {
@@ -892,7 +922,11 @@ body.start-body.theme-light {
   --indigo: #3b392f;
   --mint: #527a64;
   --line: rgba(46,43,36,.12);
-  --paper: #f3f1ec;
+  --paper: #eeede8;
+  --ambient-glow: color-mix(in srgb,var(--accent) 24%,transparent);
+  --ambient-glow-soft: color-mix(in srgb,var(--accent) 16%,transparent);
+  --ambient-glow-faint: color-mix(in srgb,var(--accent) 10%,transparent);
+  --ambient-dot: color-mix(in srgb,var(--accent) 14%,transparent);
   --danger: #a7464f;
   --accent: #58759b;
   --accent-contrast: #fff;
@@ -900,12 +934,12 @@ body.start-body.theme-light {
   --accent-soft: rgba(88,117,155,.1);
   --accent-glow: rgba(88,117,155,.075);
   --accent-line: rgba(88,117,155,.24);
-  --surface: rgba(255,255,255,.72);
-  --surface-alt: rgba(255,255,255,.9);
-  --float: rgba(255,255,255,.94);
+  --surface: rgba(255,255,255,.22);
+  --surface-alt: rgba(255,255,255,.34);
+  --float: rgba(255,255,255,.74);
   --divider: rgba(46,43,36,.1);
-  --field: rgba(255,255,255,.76);
-  --sidebar-surface: rgba(255,255,255,.72);
+  --field: rgba(255,255,255,.18);
+  --sidebar-surface: rgba(255,255,255,.16);
   --primary-contrast: #fbfaf7;
   --focus: rgba(112,91,55,.72);
   --focus-border: rgba(112,91,55,.42);
@@ -917,20 +951,144 @@ body.start-body.theme-light {
   --brand-icon-filter: none;
   --shadow: 0 18px 50px rgba(57,48,29,.11);
   --blur-glass: 16px;
+  --ambient-blend: multiply;
   --radius-control: 12px;
   --radius-panel: 24px;
   --control-height: 40px;
+  --button-glass: color-mix(in srgb,var(--surface-alt) 65%,transparent);
+  --button-glass-hover: color-mix(in srgb,var(--surface-alt) 85%,transparent);
+  --button-primary-glass: color-mix(in srgb,var(--accent) 14%,var(--button-glass));
+  --button-primary-glass-hover: color-mix(in srgb,var(--accent) 21%,var(--button-glass-hover));
   --font-serif: 'Source Han Serif SC','Noto Serif CJK SC','Songti SC','SimSun',serif;
   color: var(--ink);
   background: var(--paper);
   font-family: 'Segoe UI','Microsoft YaHei',sans-serif;
 }
 
+body:has(.shell),
+body.popup-body,
+body.start-body {
+  isolation: isolate;
+  overflow-x: hidden;
+  position: relative;
+}
+
+@property --ambient-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.ambient-background {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambient-gradient {
+  position: absolute;
+  left: var(--ambient-flow-a-x,36%);
+  top: var(--ambient-flow-a-y,48%);
+  width: 116vw;
+  height: 92vh;
+  border-radius: 48% 52% 61% 39% / 47% 42% 58% 53%;
+  filter: blur(78px);
+  opacity: .68;
+  mix-blend-mode: var(--ambient-blend,screen);
+  transform: translate(-50%,-50%);
+
+}
+
+.ambient-gradient-a {
+  background:
+    linear-gradient(calc(118deg + var(--ambient-angle)),transparent 8%,var(--ambient-glow-faint) 25%,var(--ambient-glow) 43%,var(--ambient-glow-soft) 58%,transparent 84%),
+    linear-gradient(calc(28deg + var(--ambient-angle)),transparent 32%,var(--ambient-glow-soft) 48%,transparent 68%);
+  animation: ambient-flow-a 52s linear infinite;
+  animation-delay: var(--ambient-flow-a-delay,0s);
+}
+
+.ambient-gradient-b {
+  left: var(--ambient-flow-b-x,64%);
+  top: var(--ambient-flow-b-y,52%);
+  width: 108vw;
+  height: 86vh;
+  opacity: .48;
+  background:
+    linear-gradient(calc(42deg + var(--ambient-angle)),transparent 12%,var(--ambient-glow-soft) 31%,var(--ambient-glow) 49%,var(--ambient-glow-faint) 63%,transparent 86%),
+    linear-gradient(calc(146deg + var(--ambient-angle)),transparent 24%,var(--ambient-glow-faint) 42%,transparent 68%);
+  animation: ambient-flow-b 67s linear infinite;
+  animation-delay: var(--ambient-flow-b-delay,0s);
+}
+
+@property --dot-angle-a {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --dot-angle-b {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.ambient-dot-field {
+  position: absolute;
+  inset: 0;
+  opacity: .72;
+  background-image: radial-gradient(var(--ambient-dot) 1px,transparent 1.2px);
+  background-size: 7px 7px;
+  --dot-mask:
+    linear-gradient(calc(118deg + var(--dot-angle-a)),transparent 8%,rgba(0,0,0,.25) 25%,#000 43%,rgba(0,0,0,.65) 58%,transparent 84%),
+    linear-gradient(calc(28deg + var(--dot-angle-a)),transparent 32%,rgba(0,0,0,.65) 48%,transparent 68%),
+    linear-gradient(calc(42deg + var(--dot-angle-b)),transparent 12%,rgba(0,0,0,.31) 31%,rgba(0,0,0,.48) 49%,rgba(0,0,0,.12) 63%,transparent 86%),
+    linear-gradient(calc(146deg + var(--dot-angle-b)),transparent 24%,rgba(0,0,0,.12) 42%,transparent 68%);
+  -webkit-mask-image: var(--dot-mask);
+  mask-image: var(--dot-mask);
+  mask-size: 116vw 92vh,116vw 92vh,108vw 86vh,108vw 86vh;
+  mask-position:
+    calc(var(--ambient-flow-a-x,36vw) - 58vw) calc(var(--ambient-flow-a-y,48vh) - 46vh),
+    calc(var(--ambient-flow-a-x,36vw) - 58vw) calc(var(--ambient-flow-a-y,48vh) - 46vh),
+    calc(var(--ambient-flow-b-x,64vw) - 54vw) calc(var(--ambient-flow-b-y,52vh) - 43vh),
+    calc(var(--ambient-flow-b-x,64vw) - 54vw) calc(var(--ambient-flow-b-y,52vh) - 43vh);
+  mask-repeat: no-repeat;
+  mask-composite: add;
+  animation: ambient-dots-a 52s linear infinite,ambient-dots-b 67s linear infinite;
+  animation-delay: var(--ambient-flow-a-delay,0s),var(--ambient-flow-b-delay,0s);
+}
+
+@keyframes ambient-dots-a {
+  from { --dot-angle-a: 0deg; }
+  to { --dot-angle-a: 360deg; }
+}
+@keyframes ambient-dots-b {
+  from { --dot-angle-b: 0deg; }
+  to { --dot-angle-b: -360deg; }
+}
+
+@keyframes ambient-flow-a {
+  from { --ambient-angle: 0deg; }
+  to { --ambient-angle: 360deg; }
+}
+
+@keyframes ambient-flow-b {
+  from { --ambient-angle: 0deg; }
+  to { --ambient-angle: -360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-gradient,
+  .ambient-dot-field {
+    animation: none;
+  }
+}
+
 body:has(.shell) .shell {
   height: 100vh;
   min-height: 0;
   overflow: hidden;
-  background: var(--paper);
+  background: transparent;
 }
 
 body:has(.shell) .sidebar {
@@ -2099,6 +2257,7 @@ body.start-body input:focus-visible {
   outline-color: var(--focus);
 }
 
+
 body:has(.shell).theme-dark,
 body:has(.shell).theme-light {
   --field-focus-border: color-mix(in srgb, var(--accent) 11%, transparent);
@@ -2761,4 +2920,48 @@ body:has(.shell) #excluded-domains {
   body:has(.shell) .page-editor-tools {
     justify-content: flex-start;
   }
+}
+
+/* Shared glass buttons across the workspace, popup, and new tab. */
+:is(body:has(.shell),body.popup-body,body.start-body) button {
+  background: var(--button-glass);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  backdrop-filter: blur(var(--blur-glass));
+  box-shadow: none;
+}
+
+:is(body:has(.shell),body.popup-body,body.start-body) button:hover:not(:disabled) {
+  background: var(--button-glass-hover);
+}
+
+:is(body:has(.shell),body.popup-body,body.start-body) button.primary {
+  color: var(--ink);
+  background: var(--button-primary-glass);
+  border-color: var(--accent-line);
+}
+
+:is(body:has(.shell),body.popup-body,body.start-body) button.primary:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--button-primary-glass-hover);
+}
+
+:is(body:has(.shell),body.popup-body,body.start-body) button.secondary,
+:is(body:has(.shell),body.popup-body,body.start-body) button.quiet {
+  background: var(--button-glass);
+}
+
+:is(body:has(.shell),body.popup-body,body.start-body) button.secondary:hover:not(:disabled),
+:is(body:has(.shell),body.popup-body,body.start-body) button.quiet:hover:not(:disabled) {
+  background: var(--button-glass-hover);
+}
+
+:is(body:has(.shell),body.popup-body,body.start-body) button.danger {
+  color: var(--danger);
+  background: color-mix(in srgb,var(--danger-soft) 80%,transparent);
+}
+
+:is(body:has(.shell),body.popup-body,body.start-body) button.danger:hover:not(:disabled) {
+  background: var(--danger-soft);
 }

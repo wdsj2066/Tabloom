@@ -1,5 +1,20 @@
 import { KEYS } from '../core/config.js';
 
+const AMBIENT_CYCLE_SECONDS = 52;
+const AMBIENT_SECONDARY_CYCLE_SECONDS = 67;
+if (typeof document !== 'undefined' && document.body) {
+  const firstX = 28 + Math.random() * 14;
+  const secondX = 58 + Math.random() * 14;
+  const firstY = 28 + Math.random() * 44;
+  const secondY = Math.max(20, Math.min(80, firstY + (Math.random() - 0.5) * 16));
+  document.body.style.setProperty('--ambient-flow-a-x', firstX + 'vw');
+  document.body.style.setProperty('--ambient-flow-a-y', firstY + 'vh');
+  document.body.style.setProperty('--ambient-flow-b-x', secondX + 'vw');
+  document.body.style.setProperty('--ambient-flow-b-y', secondY + 'vh');
+  document.body.style.setProperty('--ambient-flow-a-delay', (-Math.random() * AMBIENT_CYCLE_SECONDS) + 's');
+  document.body.style.setProperty('--ambient-flow-b-delay', (-Math.random() * AMBIENT_SECONDARY_CYCLE_SECONDS) + 's');
+}
+
 export async function currentWindowId() { return (await chrome.windows.getCurrent()).id; }
 export async function command(action, data = {}) {
   const response = await chrome.runtime.sendMessage({ channel: 'tabloom', action, ...data });

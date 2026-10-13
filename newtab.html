@@ -9,6 +9,11 @@
   <link rel="stylesheet" href="src/ui/newtab.css">
 </head>
 <body class="start-body theme-dark">
+  <div class="ambient-background" aria-hidden="true">
+    <span class="ambient-gradient ambient-gradient-a"></span>
+    <span class="ambient-gradient ambient-gradient-b"></span>
+    <span class="ambient-dot-field"></span>
+  </div>
   <div id="start-content" hidden>
     <header class="start-header">
       <a class="brand" href="app.html#workspace"><img src="assets/icon-48.png" alt=""><span>Tabloom<small>标签集</small></span></a>
@@ -26,8 +31,18 @@
         <p id="provider-label" class="search-caption"></p>
       </section>
       <section id="bookmark-section" class="saved-section" aria-labelledby="bookmark-heading" hidden>
-        <div class="section-heading"><div><h2 id="bookmark-heading">浏览器收藏夹</h2><p>按收藏夹分组，直接打开常用网页。</p></div><span id="bookmark-count" class="muted"></span></div>
-        <div id="bookmark-collections" class="card-grid"></div>
+        <div class="section-heading">
+          <div><h2 id="bookmark-heading">浏览器收藏夹</h2><p>按收藏夹分组，直接打开常用网页。</p></div>
+          <div class="bookmark-navigation">
+            <span id="bookmark-count" class="muted"></span>
+            <div id="bookmark-pager" class="bookmark-pager" aria-label="收藏夹翻页" hidden>
+              <button id="bookmark-previous" class="quiet bookmark-page-button" type="button">上一个</button>
+              <span id="bookmark-page-indicator" class="bookmark-page-indicator" aria-live="polite"></span>
+              <button id="bookmark-next" class="quiet bookmark-page-button" type="button">下一个</button>
+            </div>
+          </div>
+        </div>
+        <div id="bookmark-collections" class="card-grid bookmark-collections-grid"></div>
       </section>
       <section class="saved-section" aria-labelledby="saved-heading">
         <div class="section-heading"><div><h2 id="saved-heading">Tabloom 固定组</h2><p>一键打开，回到熟悉的工作空间。</p></div><span id="saved-count" class="muted"></span></div>
@@ -36,6 +51,18 @@
       <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
       <footer>Tabloom · 为专注留一点空间</footer>
     </main>
+    <dialog id="bookmark-dialog" class="bookmark-dialog" aria-labelledby="bookmark-dialog-title">
+      <div class="bookmark-dialog-content">
+        <div class="bookmark-dialog-heading">
+          <div>
+            <h2 id="bookmark-dialog-title"></h2>
+            <p id="bookmark-dialog-caption"></p>
+          </div>
+          <button id="bookmark-dialog-close" class="quiet bookmark-page-button" type="button">关闭</button>
+        </div>
+        <ul id="bookmark-dialog-links" class="bookmark-page-tags"></ul>
+      </div>
+    </dialog>
   </div>
   <p id="start-error" class="start-error" role="alert" hidden></p>
   <script type="module" src="src/ui/newtab.js"></script>
