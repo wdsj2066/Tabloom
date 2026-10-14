@@ -71,6 +71,37 @@ test('模型等待期间标签跳转、关闭或被手动分组时重新核对',
   assert.equal((await job).pages, 0);
   assert.equal(app.calls.grouped.length, 0);
 });
+
+test('同名托管组保留所有样本和托管资格，手动重整后合并', async () => {
+  const app = fixture({
+    tabs: [tab(1, { groupId: 8 }), tab(2, { groupId: 9 }), tab(3), tab(4, { groupId: 10 })],
+    groups: [{ id: 8, title: '开发' }, { id: 9, title: ' 开发 ' }, { id: 10, title: '开发' }],
+    managed: [8, 9],
+    classifier: async (settings, batch, context) => {
+      assert.equal(context.length, 2);
+      return [{ name: '开发', ids: batch.map(item => item.id) }];
+    }
+  });
+  await app.engine.analyze(1, true);
+  assert.equal(app.tabs.find(item => item.id === 3).groupId, 8);
+  assert.deepEqual(app.managed, [8, 9]);
+  await app.engine.analyze(1);
+  assert.ok(app.tabs.filter(item => item.id <= 3).every(item => item.groupId === 8));
+  assert.equal(app.tabs.find(item => item.id === 4).groupId, 10);
+});
+
+test('模型等待期间目标组被删除时复用其他同名托管组', async () => {
+  const app = fixture({
+    tabs: [tab(1, { groupId: 8 }), tab(2, { groupId: 9 }), tab(3)],
+    groups: [{ id: 8, title: 'Chat' }, { id: 9, title: 'chat' }], managed: [8, 9],
+    classifier: async () => {
+      app.browser.tabGroups.query = async () => [{ id: 9, title: 'chat' }];
+      return [{ name: ' CHAT ', ids: [3] }];
+    }
+  });
+  await app.engine.analyze(1, true);
+  assert.equal(app.calls.grouped[0].groupId, 9);
+});
 test('固定浏览器组会解除 AI 托管资格', async () => {
   const app = fixture({ tabs: [tab(1, { groupId: 8 })], groups: [{ id: 8, title: '研发', color: 'blue' }], managed: [8] });
   await app.engine.saveNative(1, 8);

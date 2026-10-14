@@ -1,9 +1,7 @@
 # 图标
 
-Tabloom 的新图标使用内置 imagegen 生成，再用高质量缩放输出 Chrome 图标尺寸。没有使用旧项目的图标作为参考图。
+Tabloom 使用三层依次归拢的标签作为品牌符号。暖白线条、深墨底色与管理中心的编辑杂志风保持一致，不使用星光、彩色强调或白色外框。
 
-源文件：`icon-source.png`。扩展使用 `icon-16.png`、`icon-32.png`、`icon-48.png`、`icon-128.png`。
+界面使用透明矢量源文件 `logo.svg`，浅色主题通过 CSS 反转为墨色。扩展工具栏使用深墨底 PNG，以保证不同浏览器工具栏背景上的辨识度。
 
-生成提示：
-
-> Use case: logo-brand. Create one original square app icon for a browser extension that intelligently organizes browser tabs into saved collections. Large centered minimal geometric symbol: three rounded tab cards converging into one tidy stack, a small four-point mint sparkle signaling intelligent organization. Deep indigo rounded-square background, ivory cards, mint accent. Flat crisp graphic, bold readable silhouette at 16 pixels, generous clean spacing, no words, no letters, no watermark, no mockup, no surrounding scene. Deliver a single finished square icon.
+`icon-source.png` 为 512px 源图；`icon-16.png`、`icon-32.png`、`icon-48.png`、`icon-128.png` 为对应扩展尺寸。

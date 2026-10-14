@@ -13,6 +13,18 @@ if (typeof document !== 'undefined' && document.body) {
   document.body.style.setProperty('--ambient-flow-b-y', secondY + 'vh');
   document.body.style.setProperty('--ambient-flow-a-delay', (-Math.random() * AMBIENT_CYCLE_SECONDS) + 's');
   document.body.style.setProperty('--ambient-flow-b-delay', (-Math.random() * AMBIENT_SECONDARY_CYCLE_SECONDS) + 's');
+
+  // Capture also catches scrolling inside the workspace and nested lists.
+  let scrollIdleTimer;
+  document.addEventListener('scroll', () => {
+    if (!document.body.classList.contains('ambient-scroll-paused')) {
+      document.body.classList.add('ambient-scroll-paused');
+    }
+    clearTimeout(scrollIdleTimer);
+    scrollIdleTimer = setTimeout(() => {
+      document.body.classList.remove('ambient-scroll-paused');
+    }, 180);
+  }, { capture: true, passive: true });
 }
 
 export async function currentWindowId() { return (await chrome.windows.getCurrent()).id; }

@@ -306,6 +306,8 @@ function renderUsage(usage = {}, pricing = {}) {
 function renderActivity(items = [], undo, busy = false) {
   const list = $('activity-list');
   const recent = items.slice(0, 8);
+  $('activity-summary').textContent = recent.length ? '最近一次 · ' + (recent[0].message || ((recent[0].pages || 0) + ' 个页面 · ' + (recent[0].groups || 0) + ' 个分组')) : '尚无整理记录';
+  $('activity-count').textContent = recent.length ? '（' + recent.length + '）' : '';
   $('activity-empty').hidden = recent.length > 0;
   list.hidden = recent.length === 0;
   list.replaceChildren(...recent.map(item => {

@@ -1,6 +1,6 @@
 import { ALARM_PREFIX, BATCH_SIZE } from '../core/config.js';
 import { colorFor, isDomainExcluded, isPage } from '../core/validation.js';
-import { eligibleTabs, survivingIds } from '../core/plan.js';
+import { eligibleTabs, groupNameKey, survivingIds } from '../core/plan.js';
 import { requestPlan } from '../core/model.js';
 import { isNativeNewTab } from './newtab-router.js';
 
@@ -60,7 +60,11 @@ export class Workspace {
         if (!automatic) await this.logActivity(id, { id: crypto.randomUUID(), time: Date.now(), type: 'analysis', pages: 0, groups: 0, message });
         return { message, pages: 0, groups: 0 };
       }
-      const targets = new Map(native.map(group => [group.title, group.id]));
+      const targets = new Map();
+      for (const group of native) {
+        const key = groupNameKey(group.title);
+        if (!targets.has(key)) targets.set(key, group.id);
+      }
       const originalTabs = new Map(candidates.map(tab => [tab.id, { url: tab.url, groupId: tab.groupId, index: tab.index }]));
       const undo = {
         id: crypto.randomUUID(),
@@ -97,7 +101,7 @@ export class Workspace {
           if (!requestBatch.length) continue;
           const snapshot = new Map(requestBatch.map(tab => [tab.id, tab.url]));
           const initialGroups = new Map(requestBatch.map(tab => [tab.id, tab.groupId]));
-          const context = (await this.browser.tabGroups.query({ windowId: id })).filter(group => [...targets.values()].includes(group.id)).map(group => ({
+          const context = (await this.browser.tabGroups.query({ windowId: id })).filter(group => managedIds.has(group.id)).map(group => ({
             name: group.title,
             pages: [...current.values()].filter(tab => tab.groupId === group.id && isPage(tab.url) && !isDomainExcluded(tab.url, requestSettings.excludedDomains)).slice(0, 2).map(tab => ({ title: tab.title || '', url: tab.url }))
           })).filter(group => group.pages.length);
@@ -123,8 +127,10 @@ export class Workspace {
             const members = survivingIds(entry.ids, snapshot, live, initialGroups).filter(tabId => !isDomainExcluded(liveById.get(tabId)?.url, latestSettings.excludedDomains));
             if (!members.length) continue;
             const availableGroups = await this.browser.tabGroups.query({ windowId: id });
-            const previousId = targets.get(entry.name);
-            const targetId = availableGroups.some(group => group.id === previousId && group.title === entry.name) ? previousId : undefined;
+            const key = groupNameKey(entry.name);
+            const previousId = targets.get(key);
+            const targetId = availableGroups.find(group => group.id === previousId && groupNameKey(group.title) === key)?.id
+              ?? availableGroups.find(group => managedIds.has(group.id) && groupNameKey(group.title) === key)?.id;
             const toGroup = targetId === undefined ? members : members.filter(tabId => liveById.get(tabId)?.groupId !== targetId);
             if (!toGroup.length) continue;
             const groupId = await this.browser.tabs.group(targetId === undefined ? { tabIds: toGroup, createProperties: { windowId: id } } : { tabIds: toGroup, groupId: targetId });
@@ -138,11 +144,13 @@ export class Workspace {
             }
             if (targetId === undefined) {
               await this.browser.tabGroups.update(groupId, { title: entry.name, color: colorFor(entry.name) });
-              targets.set(entry.name, groupId);
             }
+            targets.set(key, groupId);
+            managedIds.add(groupId);
             touched.add(groupId);
             pages += movedMembers.length;
-            await this.repository.setManaged(id, [...new Set([...targets.values()])]);
+            const activeIds = new Set((await this.browser.tabGroups.query({ windowId: id })).map(group => group.id));
+            await this.repository.setManaged(id, [...managedIds].filter(groupId => activeIds.has(groupId)));
             await persistUndoSnapshot();
           }
         }

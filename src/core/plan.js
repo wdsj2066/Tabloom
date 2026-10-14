@@ -1,3 +1,7 @@
+export function groupNameKey(name) {
+  return (name || '').normalize('NFKC').trim().replace(/\s+/gu, ' ').toLowerCase();
+}
+
 export function readPlan(text, candidates) {
   if (typeof text !== 'string') throw new Error('模型没有返回文本内容。');
   const trimmed = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
@@ -12,16 +16,18 @@ export function readPlan(text, candidates) {
       throw new Error('模型返回了不完整的分组。');
     }
     const name = item.name.trim().slice(0, 60);
-    const members = merged.get(name) || [];
+    const key = groupNameKey(name);
+    const entry = merged.get(key) || { name, ids: [] };
+    const members = entry.ids;
     for (const id of item.ids) {
       if (!Number.isInteger(id) || !allowed.has(id) || assigned.has(id)) throw new Error('模型回复包含未知或重复的标签 ID。');
       assigned.add(id);
       members.push(id);
     }
-    merged.set(name, members);
+    merged.set(key, entry);
   }
   if (assigned.size !== allowed.size) throw new Error('模型遗漏了部分标签，请重试。');
-  return [...merged].map(([name, ids]) => ({ name, ids }));
+  return [...merged.values()];
 }
 
 export function eligibleTabs(tabs) {

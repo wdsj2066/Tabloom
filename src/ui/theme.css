@@ -2965,3 +2965,33 @@ body:has(.shell) #excluded-domains {
 :is(body:has(.shell),body.popup-body,body.start-body) button.danger:hover:not(:disabled) {
   background: var(--danger-soft);
 }
+/* Compact activity disclosure keeps undo available while the log is closed. */
+body:has(.shell) .activity-details { margin-top: 12px; }
+body:has(.shell) .activity-details summary {
+  width: fit-content;
+  padding: 5px 0;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  list-style: none;
+}
+body:has(.shell) .activity-details summary::-webkit-details-marker { display: none; }
+body:has(.shell) .activity-details summary:hover { color: var(--ink); }
+body:has(.shell) .activity-details summary:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; border-radius: 4px; }
+body:has(.shell) .activity-hide,
+body:has(.shell) .activity-details[open] .activity-show { display: none; }
+body:has(.shell) .activity-details[open] .activity-hide { display: inline; }
+body:has(.shell) .activity-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+body:has(.shell) .activity-list { max-height: 300px; overflow-y: auto; overscroll-behavior: contain; }
+body:has(.shell) .activity-heading > div { min-width: 0; }
+body:has(.shell) .activity-heading > button { flex-shrink: 0; }
+body:has(.shell) .brand img,
+body.popup-body .brand img,
+body.start-body .brand img { clip-path: none; filter: none; border-radius: 0; opacity: 1; }
+body.theme-light .brand img { filter: invert(1); }
+
+/* Freeze at the current frame while any page or nested panel is scrolling. */
+body.ambient-scroll-paused .ambient-gradient,
+body.ambient-scroll-paused .ambient-dot-field {
+  animation-play-state: paused;
+}

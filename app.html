@@ -9,7 +9,7 @@
 </div>
 <div class="shell">
   <aside class="sidebar">
-    <a class="brand" href="#workspace"><img src="assets/icon-48.png" alt=""><span>Tabloom<small>标签集</small></span></a>
+    <a class="brand" href="#workspace"><img src="assets/logo.svg" alt=""><span>Tabloom<small>标签集</small></span></a>
     <nav aria-label="主导航"><a href="#workspace" data-route="workspace">工作台</a><a href="#collections" data-route="collections">固定分组</a><a href="#settings" data-route="settings">设置</a></nav>
     <div class="sidebar-note"><strong>浏览器工作区</strong><p>整理当前窗口，固定常用页面。</p></div>
   </aside>
@@ -41,9 +41,12 @@
       </section>
       <article class="analysis-card"><div><p class="eyebrow">整理</p><h2>按用途归类当前页面</h2><p id="analysis-state">相似用途归在一组，保留手动分组和固定页面。</p><span id="model-summary" class="model-summary"></span></div><div class="analysis-actions"><button id="analyze" class="primary">开始整理</button><button id="cancel" class="quiet" hidden>停止整理</button><label class="toggle"><input type="checkbox" id="automatic"><span>自动整理新页面</span></label></div></article>
       <section class="activity-section" aria-labelledby="activity-heading">
-        <div class="activity-heading"><div><h2 id="activity-heading">整理记录</h2><p>撤销会跳过已关闭、网址变化、重新分组或调整顺序的页面。</p></div><button id="undo-analysis" class="secondary" hidden>撤销上次整理</button></div>
+        <div class="activity-heading"><div><h2 id="activity-heading">整理记录</h2><p id="activity-summary">尚无整理记录</p></div><button id="undo-analysis" class="secondary" hidden>撤销上次整理</button></div>
+        <details class="activity-details"><summary><span class="activity-show">查看最近记录</span><span class="activity-hide">收起记录</span><span id="activity-count" class="activity-count"></span></summary>
+        <p class="activity-note">撤销会跳过已关闭、网址变化、重新分组或调整顺序的页面。</p>
         <ol id="activity-list" class="activity-list"></ol>
         <p id="activity-empty" class="activity-empty">整理后，这里会显示最近的操作记录。</p>
+        </details>
       </section>
       <div class="section-heading"><div><h2>当前窗口的分组</h2><p>固定一组页面，下次可以直接打开。</p></div><a class="text-link" href="#collections">查看固定组</a></div>
       <div id="native-list" class="card-grid"></div>

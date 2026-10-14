@@ -42,6 +42,12 @@ test('模型结果遗漏、重复、越界和错误结构均不能通过校验',
   }
   assert.throws(() => readPlan('not json', [page(1)]));
 });
+
+test('同名组忽略首尾空白、全角字符与大小写差异', () => {
+  assert.deepEqual(readPlan(JSON.stringify({ collections: [
+    { name: 'Chat', ids: [1] }, { name: ' ＣＨＡＴ ', ids: [2] }
+  ] }), [page(1), page(2)]), [{ name: 'Chat', ids: [1, 2] }]);
+});
 test('保留手动分组、固定标签和分析期间发生变化的页面', () => {
   assert.deepEqual(eligibleTabs([page(1), page(2, { groupId: 8 }), page(3, { pinned: true }), page(4, { url: 'chrome://settings' })]).map(tab => tab.id), [1]);
   const snapshot = new Map([1, 2, 3, 4].map(id => [id, page(id).url]));
