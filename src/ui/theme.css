@@ -894,6 +894,7 @@ body.start-body.theme-dark {
   --placeholder: rgba(255,255,255,.38);
   --scrollbar: rgba(255,255,255,.24);
   --backdrop: rgba(0,0,0,.6);
+  --bookmark-backdrop: rgba(0,0,0,.28);
   --primary-hover: rgba(242,241,238,.86);
   --danger-soft: rgba(208,112,112,.12);
   --brand-icon-filter: grayscale(.82) brightness(.82);
@@ -946,6 +947,7 @@ body.start-body.theme-light {
   --placeholder: rgba(41,40,35,.42);
   --scrollbar: rgba(41,40,35,.24);
   --backdrop: rgba(35,33,27,.3);
+  --bookmark-backdrop: rgba(35,33,27,.1);
   --primary-hover: #464238;
   --danger-soft: rgba(167,70,79,.1);
   --brand-icon-filter: none;
