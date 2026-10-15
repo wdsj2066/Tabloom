@@ -49,17 +49,22 @@ function fixture(input = {}) {
   const engine = new Workspace(browser, repository, classifier);
   return { engine, calls, browser, repository, mutateTabs: value => { tabs = value; }, get tabs() { return tabs; }, get managed() { return managed; } };
 }
-test('分批整理并复用自己的主题组，保留手动组和固定标签', async () => {
+test('超过 60 页统一规划并重排浏览器分组，保留固定标签', async () => {
   const tabs = Array.from({ length: 65 }, (_, index) => tab(index + 1));
   tabs.push(tab(80, { pinned: true }), tab(81, { groupId: 5 }));
-  const app = fixture({ tabs, groups: [{ id: 5, title: '手动组' }] });
+  let requests = 0;
+  const app = fixture({ tabs, groups: [{ id: 5, title: '手动组' }], classifier: async (settings, pages) => {
+    requests += 1;
+    assert.equal(pages.length, 66);
+    return [{ name: '研发', ids: pages.map(page => page.id) }];
+  } });
   const result = await app.engine.analyze(1);
-  assert.equal(result.pages, 65);
+  assert.equal(requests, 1);
+  assert.equal(result.pages, 66);
   assert.equal(result.groups, 1);
-  assert.equal(app.calls.grouped.length, 2);
-  assert.equal(app.calls.grouped[1].groupId, app.calls.grouped[0].groupId ?? app.managed[0]);
+  assert.equal(app.calls.grouped.length, 1);
   assert.equal(app.tabs.find(item => item.id === 80).groupId, -1);
-  assert.equal(app.tabs.find(item => item.id === 81).groupId, 5);
+  assert.equal(app.tabs.find(item => item.id === 81).groupId, app.tabs.find(item => item.id === 1).groupId);
 });
 test('模型等待期间标签跳转、关闭或被手动分组时重新核对', async () => {
   let release;
@@ -72,19 +77,19 @@ test('模型等待期间标签跳转、关闭或被手动分组时重新核对',
   assert.equal(app.calls.grouped.length, 0);
 });
 
-test('同名托管组保留所有样本和托管资格，手动重整后合并', async () => {
+test('自动整理合并同名托管组，保留手动同名组', async () => {
   const app = fixture({
     tabs: [tab(1, { groupId: 8 }), tab(2, { groupId: 9 }), tab(3), tab(4, { groupId: 10 })],
     groups: [{ id: 8, title: '开发' }, { id: 9, title: ' 开发 ' }, { id: 10, title: '开发' }],
     managed: [8, 9],
     classifier: async (settings, batch, context) => {
-      assert.equal(context.length, 2);
+      assert.equal(context.length, batch.some(item => item.groupId === 9) ? 2 : 1);
       return [{ name: '开发', ids: batch.map(item => item.id) }];
     }
   });
   await app.engine.analyze(1, true);
   assert.equal(app.tabs.find(item => item.id === 3).groupId, 8);
-  assert.deepEqual(app.managed, [8, 9]);
+  assert.ok(app.tabs.filter(item => item.id <= 3).every(item => item.groupId === 8));
   await app.engine.analyze(1);
   assert.ok(app.tabs.filter(item => item.id <= 3).every(item => item.groupId === 8));
   assert.equal(app.tabs.find(item => item.id === 4).groupId, 10);
@@ -96,7 +101,7 @@ test('模型等待期间目标组被删除时复用其他同名托管组', async
     groups: [{ id: 8, title: 'Chat' }, { id: 9, title: 'chat' }], managed: [8, 9],
     classifier: async () => {
       app.browser.tabGroups.query = async () => [{ id: 9, title: 'chat' }];
-      return [{ name: ' CHAT ', ids: [3] }];
+      return [{ name: ' CHAT ', ids: [1, 2, 3] }];
     }
   });
   await app.engine.analyze(1, true);
@@ -174,7 +179,7 @@ test('等待期间全部标签关闭时不向模型发送请求', async () => {
   await app.engine.analyze(1, true);
   assert.equal(requests, 0);
 });
-test('上一批分析期间已关闭的后续标签，不进入后续模型请求', async () => {
+test('全局规划期间关闭的标签不会被移动', async () => {
   const batches = [];
   const app = fixture({ tabs: Array.from({ length: 65 }, (_, index) => tab(index + 1)), classifier: async (settings, batch) => {
     batches.push(batch.map(item => item.id));
@@ -202,19 +207,20 @@ test('手动整理重新分析 AI 品牌组，按 Chat 合并并保留手动和�
   assert.equal(app.tabs.find(item => item.id === 3).groupId, 10);
   assert.equal(app.tabs.find(item => item.id === 4).groupId, -1);
 });
-test('自动整理只发送新增标签及既有组样本，不重分析全部 AI 组', async () => {
+test('自动整理将旧品牌组与新增标签一起重构', async () => {
   const app = fixture({
     tabs: [tab(1, { title: 'ChatGPT', groupId: 8 }), tab(2, { title: 'Xiaomi MiMo Studio' })],
-    groups: [{ id: 8, title: 'Chat' }], managed: [8],
+    groups: [{ id: 8, title: 'ChatGPT' }], managed: [8],
     classifier: async (settings, batch, context) => {
-      assert.deepEqual(batch.map(item => item.id), [2]);
-      assert.equal(context[0].name, 'Chat');
+      assert.deepEqual(batch.map(item => item.id), [1, 2]);
+      assert.equal(context[0].name, 'ChatGPT');
       assert.equal(context[0].pages[0].title, 'ChatGPT');
-      return [{ name: 'Chat', ids: [2] }];
+      return [{ name: 'Chat', ids: [1, 2] }];
     }
   });
   await app.engine.analyze(1, true);
-  assert.equal(app.calls.grouped[0].groupId, 8);
+  assert.equal(app.tabs[0].groupId, app.tabs[1].groupId);
+  assert.equal((await app.browser.tabGroups.query())[1].title, 'Chat');
 });
 test('重新整理时 AI 组中的标签若已被用户移动，不再移动该标签', async () => {
   let release;

@@ -1,6 +1,6 @@
-import { ALARM_PREFIX, BATCH_SIZE } from '../core/config.js';
+import { ALARM_PREFIX } from '../core/config.js';
 import { colorFor, isDomainExcluded, isPage } from '../core/validation.js';
-import { eligibleTabs, groupNameKey, survivingIds } from '../core/plan.js';
+import { groupNameKey, survivingIds } from '../core/plan.js';
 import { requestPlan } from '../core/model.js';
 import { isNativeNewTab } from './newtab-router.js';
 
@@ -51,17 +51,20 @@ export class Workspace {
     if (automatic && this.jobs.has(id)) { await this.schedule(id); return { message: '等待当前操作完成。' }; }
     return this.execute(id, 'analysis', async signal => {
       const tracked = new Set(await this.repository.managed(id));
-      const native = (await this.browser.tabGroups.query({ windowId: id })).filter(group => tracked.has(group.id));
-      const managedIds = new Set(native.map(group => group.id));
+      const allGroups = await this.browser.tabGroups.query({ windowId: id });
+      const managedGroups = allGroups.filter(group => tracked.has(group.id));
+      const sourceGroups = automatic ? managedGroups : allGroups;
+      const sourceGroupIds = new Set(sourceGroups.map(group => group.id));
+      const managedIds = new Set(managedGroups.map(group => group.id));
       const allTabs = await this.browser.tabs.query({ windowId: id });
-      const candidates = (automatic ? eligibleTabs(allTabs) : allTabs.filter(tab => !tab.pinned && (tab.groupId === -1 || managedIds.has(tab.groupId)))).filter(tab => isPage(tab.url) && !isNativeNewTab(tab.url) && !isDomainExcluded(tab.url, settings.excludedDomains));
+      const candidates = allTabs.filter(tab => !tab.pinned && (tab.groupId === -1 || sourceGroupIds.has(tab.groupId))).filter(tab => isPage(tab.url) && !isNativeNewTab(tab.url) && !isDomainExcluded(tab.url, settings.excludedDomains));
       if (!candidates.length) {
-        const message = '没有待整理的页面，手动分组、排除域名和固定标签已保留。';
+        const message = '没有待整理的页面，排除域名和固定标签已保留。';
         if (!automatic) await this.logActivity(id, { id: crypto.randomUUID(), time: Date.now(), type: 'analysis', pages: 0, groups: 0, message });
         return { message, pages: 0, groups: 0 };
       }
       const targets = new Map();
-      for (const group of native) {
+      for (const group of managedGroups) {
         const key = groupNameKey(group.title);
         if (!targets.has(key)) targets.set(key, group.id);
       }
@@ -70,7 +73,7 @@ export class Workspace {
         id: crypto.randomUUID(),
         time: Date.now(),
         initialManaged: [...tracked],
-        originalGroups: native.map(group => ({ id: group.id, title: group.title || '未命名分组', color: group.color, collapsed: !!group.collapsed })),
+        originalGroups: sourceGroups.map(group => ({ id: group.id, title: group.title || '未命名分组', color: group.color, collapsed: !!group.collapsed })),
         createdGroupIds: [],
         expectedGroupOrders: [],
         pages: []
@@ -88,20 +91,21 @@ export class Workspace {
       let pages = 0;
       const touched = new Set();
       try {
-        for (let offset = 0; offset < candidates.length; offset += BATCH_SIZE) {
+        // 全窗口统一规划，避免分批命名漂移，并让已有托管组参与用途重构。
+        {
           signal.throwIfAborted();
           const current = new Map((await this.browser.tabs.query({ windowId: id })).map(tab => [tab.id, tab]));
-          const batch = candidates.slice(offset, offset + BATCH_SIZE).filter(tab => {
+          const batch = candidates.filter(tab => {
             const live = current.get(tab.id);
             return live && live.groupId === tab.groupId && !live.pinned && live.url === tab.url;
           }).map(tab => current.get(tab.id));
-          if (!batch.length) continue;
+          if (!batch.length) return { message: '待整理页面已发生变化，本次未移动页面。', pages: 0, groups: 0 };
           const requestSettings = await this.repository.settings();
           const requestBatch = batch.filter(tab => !isDomainExcluded(tab.url, requestSettings.excludedDomains));
-          if (!requestBatch.length) continue;
+          if (!requestBatch.length) return { message: '待整理页面已被排除，本次未移动页面。', pages: 0, groups: 0 };
           const snapshot = new Map(requestBatch.map(tab => [tab.id, tab.url]));
           const initialGroups = new Map(requestBatch.map(tab => [tab.id, tab.groupId]));
-          const context = (await this.browser.tabGroups.query({ windowId: id })).filter(group => managedIds.has(group.id)).map(group => ({
+          const context = (await this.browser.tabGroups.query({ windowId: id })).filter(group => sourceGroupIds.has(group.id)).map(group => ({
             name: group.title,
             pages: [...current.values()].filter(tab => tab.groupId === group.id && isPage(tab.url) && !isDomainExcluded(tab.url, requestSettings.excludedDomains)).slice(0, 2).map(tab => ({ title: tab.title || '', url: tab.url }))
           })).filter(group => group.pages.length);
